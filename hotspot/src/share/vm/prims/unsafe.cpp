@@ -41,7 +41,7 @@
 #include "utilities/dtrace.hpp"
 
 /*
- *      Implementation of class sun.misc.Unsafe
+ *      Java类sun.misc.Unsafe的底层实现，底层使用了C++语言进行实现
  */
 
 #ifndef USDT2

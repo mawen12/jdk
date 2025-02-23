@@ -33,9 +33,9 @@ import sun.reflect.Reflection;
 
 
 /**
- * A collection of methods for performing low-level, unsafe operations.
- * Although the class and all methods are public, use of this class is
- * limited because only trusted code can obtain instances of it.
+ * 提供了执行底层，unsafe操作的一组方法。
+ * 尽管类和其中所有的方法都是public的，该类的使用却是受限的，
+ * 因为只有受信任的代码才能获取它的实例。
  *
  * @author John R. Rose
  * @see #getUnsafe
@@ -44,6 +44,7 @@ import sun.reflect.Reflection;
 public final class Unsafe {
 
     private static native void registerNatives();
+
     static {
         registerNatives();
         sun.reflect.Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
@@ -54,34 +55,29 @@ public final class Unsafe {
     private static final Unsafe theUnsafe = new Unsafe();
 
     /**
-     * Provides the caller with the capability of performing unsafe
-     * operations.
+     * 为调用者提供执行不安全操作的能力。
      *
-     * <p> The returned <code>Unsafe</code> object should be carefully guarded
-     * by the caller, since it can be used to read and write data at arbitrary
-     * memory addresses.  It must never be passed to untrusted code.
+     * <p>调用者应该小心保护返回的<code>Unsafe</code>对象，因为它可用于在
+     * 任意内存地址读取和写入数据。切勿将其传递给不受信任的代码。
      *
-     * <p> Most methods in this class are very low-level, and correspond to a
-     * small number of hardware instructions (on typical machines).  Compilers
-     * are encouraged to optimize these methods accordingly.
+     * <p>该类中的绝大部分方法都非常底层，并且对应于少量硬件指令（在典型机器上）。
+     * 鼓励编译器相应的优化这些方法。
      *
-     * <p> Here is a suggested idiom for using unsafe operations:
-     *
+     * <p>以下是使用不安全操作的建议用法：
      * <blockquote><pre>
-     * class MyTrustedClass {
-     *   private static final Unsafe unsafe = Unsafe.getUnsafe();
-     *   ...
-     *   private long myCountAddress = ...;
-     *   public int getCount() { return unsafe.getByte(myCountAddress); }
-     * }
+     *     class MyTrustedClass {
+     *         private static final Unsafe unsafe = Unsafe.getUnsafe();
+     *         ...
+     *         private long myCountAddress = ...;
+     *         public int getCount() {
+     *             return unsafe.getByte(myCountAddress);
+     *         }
+     *     }
      * </pre></blockquote>
+     * <p>它可能有助于编译器使局部变量成为<code>final</code>.
      *
-     * (It may assist compilers to make the local variable be
-     * <code>final</code>.)
-     *
-     * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkPropertiesAccess</code> method doesn't allow
-     *             access to the system properties.
+     * @exception  SecurityException  如果一个安全管理器存在，
+     * 并且它的<code>checkPropertiesAccess</code>方法不允许访问系统属性。
      */
     @CallerSensitive
     public static Unsafe getUnsafe() {
@@ -94,101 +90,71 @@ public final class Unsafe {
     /// peek and poke operations
     /// (compilers should optimize these to memory ops)
 
-    // These work on object fields in the Java heap.
-    // They will not work on elements of packed arrays.
+    // 这些作用于Java堆中的对象字段
+    // 它们不适用于打包数组的元素。
 
     /**
-     * Fetches a value from a given Java variable.
-     * More specifically, fetches a field or array element within the given
-     * object <code>o</code> at the given offset, or (if <code>o</code> is
-     * null) from the memory address whose numerical value is the given
-     * offset.
-     * <p>
-     * The results are undefined unless one of the following cases is true:
+     * 从给定的Java变量中获取值。
+     * 更具体地说，从给定offset处的给定对象<code>o</code>中获取字段或数组元素。
+     * 或者（如果<code>o</code>为null）从其数值为给定offset的内存地址中获取字段
+     * 或数组元素。
+     *
+     * <p>除非以下情况之一为真，否则结果是未定义的：
      * <ul>
-     * <li>The offset was obtained from {@link #objectFieldOffset} on
-     * the {@link java.lang.reflect.Field} of some Java field and the object
-     * referred to by <code>o</code> is of a class compatible with that
-     * field's class.
-     *
-     * <li>The offset and object reference <code>o</code> (either null or
-     * non-null) were both obtained via {@link #staticFieldOffset}
-     * and {@link #staticFieldBase} (respectively) from the
-     * reflective {@link Field} representation of some Java field.
-     *
-     * <li>The object referred to by <code>o</code> is an array, and the offset
-     * is an integer of the form <code>B+N*S</code>, where <code>N</code> is
-     * a valid index into the array, and <code>B</code> and <code>S</code> are
-     * the values obtained by {@link #arrayBaseOffset} and {@link
-     * #arrayIndexScale} (respectively) from the array's class.  The value
-     * referred to is the <code>N</code><em>th</em> element of the array.
-     *
+     *     <li>offset是从某个Java字段的{@link java.lang.reflect.Field}上的{@link #objectFieldOffset(Field)}
+     *     获取的，并且<code>o</code>引用的对象属于与该字段的类相兼容的类</li>
+     *     <li>offset和对象引用<code>o</code>（无论是否为null）均通过{@link #staticFieldOffset(Field)}
+     *     或{@link #staticFieldBase(Field)}从某些字段的反射{@link java.lang.reflect.Field}上的获得</li>
+     *     <li><code>o</code>引用对象是一个数组，并且其偏移量是一个以<code>B+N*S</code>形式的整数，其中<code>N</code>
+     *     是数组中的有效索引，<code>N</code>和<code>S</code>分别是{@link #arrayBaseOffset(Class)}和{@link #arrayIndexScale(Class)}
+     *     从数组的类中获取的值。引用的值是数组的第<code>N</code>个元素。</li>
      * </ul>
-     * <p>
-     * If one of the above cases is true, the call references a specific Java
-     * variable (field or array element).  However, the results are undefined
-     * if that variable is not in fact of the type returned by this method.
-     * <p>
-     * This method refers to a variable by means of two parameters, and so
-     * it provides (in effect) a <em>double-register</em> addressing mode
-     * for Java variables.  When the object reference is null, this method
-     * uses its offset as an absolute address.  This is similar in operation
-     * to methods such as {@link #getInt(long)}, which provide (in effect) a
-     * <em>single-register</em> addressing mode for non-Java variables.
-     * However, because Java variables may have a different layout in memory
-     * from non-Java variables, programmers should not assume that these
-     * two addressing modes are ever equivalent.  Also, programmers should
-     * remember that offsets from the double-register addressing mode cannot
-     * be portably confused with longs used in the single-register addressing
-     * mode.
      *
-     * @param o Java heap object in which the variable resides, if any, else
-     *        null
-     * @param offset indication of where the variable resides in a Java heap
-     *        object, if any, else a memory address locating the variable
-     *        statically
-     * @return the value fetched from the indicated Java variable
-     * @throws RuntimeException No defined exceptions are thrown, not even
-     *         {@link NullPointerException}
+     * <p>如果上述情况之一为真，则调用将引用特定的Java变量（字段或数组元素）。但是，
+     * 如果该变量实际上不是此方法的返回值，则结果不确定。
+     *
+     * <p>此方法通过两个参数引用变量，因此它为Java变量提供了（实际上）双寄存器寻址模式。
+     * 当对象引用为空时，此方法将其偏移量用作绝对地址。这与{@link #getInt(long)}等
+     * 方法的操作类似，后者为非Java变量提供了（实际上）单寄存器寻址模式。但是，由于Java
+     * 变量在内存中的布局可能与非Java变量不同，因此程序员不应假设这两种寻址模式永远是等效的。
+     * 此外，程序员应记住，双寄存器寻址模式的偏移量不能与单寄存器寻址模式使用的长整型相混淆。
+     *
+     * @param o 变量所在的Java堆对象（如果有），否则为null
+     * @param offset 指示变量在Java堆对象中位置（如果有），否则为静态定位变量的内存地址
+     * @return 从指示的Java变量中获取的值
+     * @throws RuntimeException 没有抛出任何已定义的异常，甚至没有{@link java.lang.NullPointerException}
      */
     public native int getInt(Object o, long offset);
 
     /**
-     * Stores a value into a given Java variable.
-     * <p>
-     * The first two parameters are interpreted exactly as with
-     * {@link #getInt(Object, long)} to refer to a specific
-     * Java variable (field or array element).  The given value
-     * is stored into that variable.
-     * <p>
-     * The variable must be of the same type as the method
-     * parameter <code>x</code>.
+     * 将值存储到给定的Java变量中。
      *
-     * @param o Java heap object in which the variable resides, if any, else
-     *        null
-     * @param offset indication of where the variable resides in a Java heap
-     *        object, if any, else a memory address locating the variable
-     *        statically
-     * @param x the value to store into the indicated Java variable
-     * @throws RuntimeException No defined exceptions are thrown, not even
-     *         {@link NullPointerException}
+     * <p>前两个参数的解释与{@link #getInt(Object, long)}完全相同，
+     * 以引用特定的Java变量（字段或数组元素）。给的值存储在该变量中。
+     *
+     * <p>变量必须与方法参数<code>x</code>属于同一类型。
+     *
+     * @param o 变量所在的Java堆对象（如果有），否则为null
+     * @param offset 指示变量在Java堆对象中位置（如果有），否则为静态定位变量的内存地址
+     * @param x 存储到指定Java变量的值
+     * @throws RuntimeException 没有抛出任何已定义的异常，甚至没有{@link java.lang.NullPointerException}
      */
     public native void putInt(Object o, long offset, int x);
 
     /**
-     * Fetches a reference value from a given Java variable.
+     * 从给定Java变量获取引用值。
+     *
      * @see #getInt(Object, long)
      */
     public native Object getObject(Object o, long offset);
 
     /**
-     * Stores a reference value into a given Java variable.
-     * <p>
-     * Unless the reference <code>x</code> being stored is either null
-     * or matches the field type, the results are undefined.
-     * If the reference <code>o</code> is non-null, car marks or
-     * other store barriers for that object (if the VM requires them)
-     * are updated.
+     * 将引用值存储到给定Java变量。
+     *
+     * <p>除非引用<code>x</code>为null，或与字段类型匹配，否则结果未定义。
+     * 如果引用<code>o</code>为非null，则汽车标记或该对象的其他存储屏障
+     * （如果VM需要它们）将被更新。
+     *
      * @see #putInt(Object, int, int)
      */
     public native void putObject(Object o, long offset, Object x);
@@ -388,21 +354,19 @@ public final class Unsafe {
         putDouble(o, (long)offset, x);
     }
 
-    // These work on values in the C heap.
+    // 这些作用于C堆中的值
 
     /**
-     * Fetches a value from a given memory address.  If the address is zero, or
-     * does not point into a block obtained from {@link #allocateMemory}, the
-     * results are undefined.
+     * 从给定内存地址获取值。如果地址为0，或未指向从{@link #allocateMemory(long)}
+     * 获取的块，则结果未定义。
      *
      * @see #allocateMemory
      */
     public native byte    getByte(long address);
 
     /**
-     * Stores a value into a given memory address.  If the address is zero, or
-     * does not point into a block obtained from {@link #allocateMemory}, the
-     * results are undefined.
+     * 将值存储到给定内存地址。如果地址为0，或未指向从{@link #allocateMemory(long)}
+     * 获取的块，则结果未定义
      *
      * @see #getByte(long)
      */
@@ -434,28 +398,23 @@ public final class Unsafe {
     public native void    putDouble(long address, double x);
 
     /**
-     * Fetches a native pointer from a given memory address.  If the address is
-     * zero, or does not point into a block obtained from {@link
-     * #allocateMemory}, the results are undefined.
+     * 从给定内存地址获取原始指针。如果地址未0，或未指向从{@link #allocateMemory(long)}
+     * 获取的块，则结果未定义。
      *
-     * <p> If the native pointer is less than 64 bits wide, it is extended as
-     * an unsigned number to a Java long.  The pointer may be indexed by any
-     * given byte offset, simply by adding that offset (as a simple integer) to
-     * the long representing the pointer.  The number of bytes actually read
-     * from the target address maybe determined by consulting {@link
-     * #addressSize}.
+     * <p>如果原始指针小于64位宽，它将被作为无符号数字扩展为Java <code>long</code>。
+     * 指针可以被任何给定的字节offset索引，只需将该offset（作为一个简单的整数）添加到表示
+     * 指针的长整型即可。从目标地址实际读取的字节数可以通过查阅{@link #allocateMemory(long)}
+     * 来确定。
      *
      * @see #allocateMemory
      */
     public native long getAddress(long address);
 
     /**
-     * Stores a native pointer into a given memory address.  If the address is
-     * zero, or does not point into a block obtained from {@link
-     * #allocateMemory}, the results are undefined.
+     * 将原始指针保存到给定内存地址。如果地址为0，或没有指向从{@link #allocateMemory(long)}
+     * 分配的块，结果则是不确定的。
      *
-     * <p> The number of bytes actually written at the target address maybe
-     * determined by consulting {@link #addressSize}.
+     * <p>可以通过{@link #addressSize()}来确定实际被写入到目标地址的字节数。
      *
      * @see #getAddress(long)
      */
@@ -464,16 +423,13 @@ public final class Unsafe {
     /// wrappers for malloc, realloc, free:
 
     /**
-     * Allocates a new block of native memory, of the given size in bytes.  The
-     * contents of the memory are uninitialized; they will generally be
-     * garbage.  The resulting native pointer will never be zero, and will be
-     * aligned for all value types.  Dispose of this memory by calling {@link
-     * #freeMemory}, or resize it with {@link #reallocateMemory}.
+     * 分配一个新的本机内存的块，大小按字节计算。内存的内容未被初始化；它们通常都是垃圾。
+     * 生成的本机指针永远不为零，并且将与所有值类型对齐。通过使用{@link #freeMemory(long)}
+     * 或使用{@link #reallocateMemory(long, long)}来调整其大小。
      *
-     * @throws IllegalArgumentException if the size is negative or too large
-     *         for the native size_t type
+     * @throws IllegalArgumentException 如果大小为负数，或者对于原生 size_t 类型来说太大
      *
-     * @throws OutOfMemoryError if the allocation is refused by the system
+     * @throws OutOfMemoryError 如果系统拒绝分配
      *
      * @see #getByte(long)
      * @see #putByte(long, byte)
@@ -481,6 +437,10 @@ public final class Unsafe {
     public native long allocateMemory(long bytes);
 
     /**
+     * 将新的本机内存块大小调整为为给定的字节大小。新块中超出旧块大小的内容为初始化；
+     * 它们通常时垃圾。当且仅当请求的大小为零时，生成的本机指针将为零。生成的本机指针
+     * 将与所有值类型对齐，通过调用
+     *
      * Resizes a new block of native memory, to the given size in bytes.  The
      * contents of the new block past the size of the old block are
      * uninitialized; they will generally be garbage.  The resulting native
@@ -651,20 +611,19 @@ public final class Unsafe {
     public native long staticFieldOffset(Field f);
 
     /**
-     * Report the location of a given static field, in conjunction with {@link
-     * #staticFieldBase}.
-     * <p>Do not expect to perform any sort of arithmetic on this offset;
-     * it is just a cookie which is passed to the unsafe heap memory accessors.
+     * 与{@link #staticFieldBase(Field)}结合使用，报告给定静态字段的位置。
      *
-     * <p>Any given field will always have the same offset, and no two distinct
-     * fields of the same class will ever have the same offset.
+     * <p>不要期望对此偏移量执行任何类型的算法运算。它只是一个传递给不安全堆内存
+     * 访问器的cookie。
      *
-     * <p>As of 1.4.1, offsets for fields are represented as long values,
-     * although the Sun JVM does not use the most significant 32 bits.
-     * It is hard to imagine a JVM technology which needs more than
-     * a few bits to encode an offset within a non-array object,
-     * However, for consistency with other methods in this class,
-     * this method reports its result as a long value.
+     * <p>任何给定字段始终具有相同的偏移量，并且同一类的两个不同字段永远不会具有
+     * 相同的偏移量。
+     *
+     * <p>从1.4.1开始，字段的偏移量表示为long值。
+     * 尽管SUN JVM不使用最高32位，很难想象JVM技术需要超过几位来非数组对象内的
+     * offset进行编码，但是为了与此类中的其他方法保持一致，此方法将其结果报告为
+     * long值。
+     *
      * @see #getInt(Object, long)
      */
     public native long objectFieldOffset(Field f);
@@ -884,13 +843,11 @@ public final class Unsafe {
                                                   int x);
 
     /**
-     * Atomically update Java variable to <tt>x</tt> if it is currently
-     * holding <tt>expected</tt>.
-     * @return <tt>true</tt> if successful
+     * 如果当前值等于<code>expected</code>值，则原子更新变量为<code>x</code>
+     *
+     * @return <code>true</code> 更新成功
      */
-    public final native boolean compareAndSwapLong(Object o, long offset,
-                                                   long expected,
-                                                   long x);
+    public final native boolean compareAndSwapLong(Object o, long offset, long expected, long x);
 
     /**
      * Fetches a reference value from a given Java variable, with volatile
@@ -1072,20 +1029,22 @@ public final class Unsafe {
     }
 
     /**
-     * Atomically exchanges the given value with the current value of
-     * a field or array element within the given object <code>o</code>
-     * at the given <code>offset</code>.
+     * 以原子方式将给定值与给定对象<code>o</code>中给定<code>offset</code>处
+     * 的字段或数组元素的当前值交换
      *
-     * @param o object/array to update the field/element in
-     * @param offset field/element offset
-     * @param newValue new value
-     * @return the previous value
+     * @param o 用于更新字段/元素的对象/数组
+     * @param offset 相对于该对象的字段/数组元素的offset
+     * @param newValue 新值
+     * @return 旧值
      * @since 1.8
      */
     public final long getAndSetLong(Object o, long offset, long newValue) {
         long v;
+        // 使用do-while的方式，一直循环，直到更新成功
         do {
+            // 返回当前值
             v = getLongVolatile(o, offset);
+            // CAS操作
         } while (!compareAndSwapLong(o, offset, v, newValue));
         return v;
     }

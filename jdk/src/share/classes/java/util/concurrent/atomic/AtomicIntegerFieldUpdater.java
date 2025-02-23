@@ -46,18 +46,12 @@ import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
 /**
- * A reflection-based utility that enables atomic updates to
- * designated {@code volatile int} fields of designated classes.
- * This class is designed for use in atomic data structures in which
- * several fields of the same node are independently subject to atomic
- * updates.
+ * 基于反射的实用程序，可对指定类的指定{@code volatile int}字段进行原子更新。
+ * 此类设计用于原子数据结构，其中同一个节点的多个字段独立地进行原子更新。
  *
- * <p>Note that the guarantees of the {@code compareAndSet}
- * method in this class are weaker than in other atomic classes.
- * Because this class cannot ensure that all uses of the field
- * are appropriate for purposes of atomic access, it can
- * guarantee atomicity only with respect to other invocations of
- * {@code compareAndSet} and {@code set} on the same updater.
+ * <p>该类的{@code compareAndSet}方法的包装弱于其它原子类。因为该类
+ * 无法确保字段的所有实用都适合原子访问的目的，所以它只能保证相对于同一
+ * 更新程序上{@code compareAndSet}和{@code set}的其他调用的原子性。
  *
  * @since 1.5
  * @author Doug Lea
@@ -65,106 +59,89 @@ import sun.reflect.Reflection;
  */
 public abstract class AtomicIntegerFieldUpdater<T> {
     /**
-     * Creates and returns an updater for objects with the given field.
-     * The Class argument is needed to check that reflective types and
-     * generic types match.
+     * 创建并返回具有给定字段的对象更新器。该类参数需要检查反射类型和通用类型匹配。
      *
-     * @param tclass the class of the objects holding the field
-     * @param fieldName the name of the field to be updated
-     * @param <U> the type of instances of tclass
-     * @return the updater
-     * @throws IllegalArgumentException if the field is not a
-     * volatile integer type
-     * @throws RuntimeException with a nested reflection-based
-     * exception if the class does not hold field or is the wrong type,
-     * or the field is inaccessible to the caller according to Java language
-     * access control
+     * @param tclass 持有字段的对象的类
+     * @param fieldName 要被更新的字段名
+     * @param <U> 类的实例类型
+     * @return 字段更新器
+     * @throws IllegalArgumentException 字段并非一个volatile 数字类型
+     * @throws RuntimeException 如果类不包含字段或类型错误，或者根据Java语言
+     * 访问控制，调用者无法访问该字段，则会出现基于嵌套反射的异常。
      */
     @CallerSensitive
     public static <U> AtomicIntegerFieldUpdater<U> newUpdater(Class<U> tclass,
                                                               String fieldName) {
-        return new AtomicIntegerFieldUpdaterImpl<U>
-            (tclass, fieldName, Reflection.getCallerClass());
+        return new AtomicIntegerFieldUpdaterImpl<U>(tclass, fieldName, Reflection.getCallerClass());
     }
 
     /**
-     * Protected do-nothing constructor for use by subclasses.
+     * 受保护的不执行任何操作的构造函数，供子类使用
      */
     protected AtomicIntegerFieldUpdater() {
     }
 
     /**
-     * Atomically sets the field of the given object managed by this updater
-     * to the given updated value if the current value {@code ==} the
-     * expected value. This method is guaranteed to be atomic with respect to
-     * other calls to {@code compareAndSet} and {@code set}, but not
-     * necessarily with respect to other changes in the field.
+     * 如果当前值{@code ==}预期值，则以原子方式将此更新程序管理的给定对象的字段设置为
+     * 给定的更新值。此方法保证相对于对{@code compareAndSet}和{@code set}的其他
+     * 调用是原子的，但不一定相对于字段中的其他更改是原子的。
      *
-     * @param obj An object whose field to conditionally set
-     * @param expect the expected value
-     * @param update the new value
-     * @return {@code true} if successful
-     * @throws ClassCastException if {@code obj} is not an instance
-     * of the class possessing the field established in the constructor
+     * @param obj 有条件地设置其字段的对象
+     * @param expect 预期值
+     * @param update 新值
+     * @return {@code true}如果成功
+     * @throws ClassCastException 如果对象不是拥有构造函数中建立的字段的类的实例
      */
     public abstract boolean compareAndSet(T obj, int expect, int update);
 
     /**
-     * Atomically sets the field of the given object managed by this updater
-     * to the given updated value if the current value {@code ==} the
-     * expected value. This method is guaranteed to be atomic with respect to
-     * other calls to {@code compareAndSet} and {@code set}, but not
-     * necessarily with respect to other changes in the field.
+     * 如果当前值{@code ==}预期值，则原子地设置被更新器管理的给定对象的字段为更新值。
+     * 此方法保证相对于对{@link compareAndSet}和{@code set}的其他调用是原子的，
+     * 但不一定相对于字段中的其他更改是原子的。
      *
-     * <p><a href="package-summary.html#weakCompareAndSet">May fail
-     * spuriously and does not provide ordering guarantees</a>, so is
-     * only rarely an appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">可能会意外失败，并且
+     * 不提供顺序保证</a>, 因此很少成为{@code compareAndSet}的合适替代方案。
      *
-     * @param obj An object whose field to conditionally set
-     * @param expect the expected value
-     * @param update the new value
-     * @return {@code true} if successful
-     * @throws ClassCastException if {@code obj} is not an instance
-     * of the class possessing the field established in the constructor
+     * @param obj 有条件地设置其字段的对象
+     * @param expect 预期值
+     * @param update 新值
+     * @return {@code true} 如果成功
+     * @throws ClassCastException 如果对象不是拥有构造函数中建立的字段的类的实例
      */
     public abstract boolean weakCompareAndSet(T obj, int expect, int update);
 
     /**
-     * Sets the field of the given object managed by this updater to the
-     * given updated value. This operation is guaranteed to act as a volatile
-     * store with respect to subsequent invocations of {@code compareAndSet}.
+     * 设置由管理器管理的给定对象的字段为给定值。保证此操作对于{@code compareAndSet}
+     * 的后续调用充当易失性存储
      *
-     * @param obj An object whose field to set
-     * @param newValue the new value
+     * @param obj 要设置字段的对象
+     * @param newValue 新值
      */
     public abstract void set(T obj, int newValue);
 
     /**
-     * Eventually sets the field of the given object managed by this
-     * updater to the given updated value.
+     * 最终设置由更新器管理的给定对象的字段为给定值。
      *
-     * @param obj An object whose field to set
-     * @param newValue the new value
+     * @param obj 要设置字段的对象
+     * @param newValue 新值
      * @since 1.6
      */
     public abstract void lazySet(T obj, int newValue);
 
     /**
-     * Gets the current value held in the field of the given object managed
-     * by this updater.
+     * 返回由更新器管理的给定对象字段中保存的当前值
      *
-     * @param obj An object whose field to get
-     * @return the current value
+     * @param obj 要获取字段的对象
+     * @return 当前值
      */
     public abstract int get(T obj);
 
     /**
-     * Atomically sets the field of the given object managed by this updater
-     * to the given value and returns the old value.
+     * 原子地设置由更新器管理的给定对象的字段为给定值，并返回旧值。
      *
-     * @param obj An object whose field to get and set
-     * @param newValue the new value
-     * @return the previous value
+     * @param obj 要获取和设置字段的对象
+     * @param newValue 新值
+     * @return 旧值
      */
     public int getAndSet(T obj, int newValue) {
         int prev;
@@ -175,11 +152,10 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Atomically increments by one the current value of the field of the
-     * given object managed by this updater.
+     * 原子地自增由更新器管理的给定对象的字段，并返回旧值。
      *
-     * @param obj An object whose field to get and set
-     * @return the previous value
+     * @param obj 要获取和设置字段的对象
+     * @return 旧值
      */
     public int getAndIncrement(T obj) {
         int prev, next;
@@ -191,11 +167,10 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Atomically decrements by one the current value of the field of the
-     * given object managed by this updater.
+     * 原子地自减由更新器管理的给定对象的字段，并返回旧值。
      *
-     * @param obj An object whose field to get and set
-     * @return the previous value
+     * @param obj 要获取和设置字段的对象
+     * @return 旧值
      */
     public int getAndDecrement(T obj) {
         int prev, next;
@@ -207,12 +182,11 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Atomically adds the given value to the current value of the field of
-     * the given object managed by this updater.
+     * 原子地在由更新器管理的给定对象的字段基础上增加给定值，并返回旧值。
      *
-     * @param obj An object whose field to get and set
-     * @param delta the value to add
-     * @return the previous value
+     * @param obj 要获取和设置字段的对象
+     * @param delta 要增加的值
+     * @return 旧值
      */
     public int getAndAdd(T obj, int delta) {
         int prev, next;
@@ -224,11 +198,10 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Atomically increments by one the current value of the field of the
-     * given object managed by this updater.
+     * 原子地自增由更新器管理的给定对象的字段，并返回更新后的值。
      *
-     * @param obj An object whose field to get and set
-     * @return the updated value
+     * @param obj 要获取和设置字段的对象
+     * @return 更新后的值
      */
     public int incrementAndGet(T obj) {
         int prev, next;
@@ -240,11 +213,10 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Atomically decrements by one the current value of the field of the
-     * given object managed by this updater.
+     * 原子地自减由更新器管理的给定对象的字段，并返回更新后的值。
      *
-     * @param obj An object whose field to get and set
-     * @return the updated value
+     * @param obj 要获取和设置字段的对象
+     * @return 更新后的值
      */
     public int decrementAndGet(T obj) {
         int prev, next;
@@ -256,12 +228,11 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
-     * Atomically adds the given value to the current value of the field of
-     * the given object managed by this updater.
+     * 原子地在由更新器管理的给定对象的字段基础上增加给定值，并返回更新后的值。
      *
-     * @param obj An object whose field to get and set
-     * @param delta the value to add
-     * @return the updated value
+     * @param obj 要获取和设置字段的对象
+     * @param delta 要增加的值
+     * @return 更新后的值
      */
     public int addAndGet(T obj, int delta) {
         int prev, next;
