@@ -27,25 +27,24 @@ package java.net;
 import java.io.IOException;
 import java.io.FileDescriptor;
 
-/*
- * On Unix systems we simply delegate to native methods.
+/**
+ * 在 Unix 系统上，我们简单代理到本地方法。
  *
  * @author Chris Hegarty
  */
+class PlainSocketImpl extends AbstractPlainSocketImpl {
 
-class PlainSocketImpl extends AbstractPlainSocketImpl
-{
     static {
         initProto();
     }
 
     /**
-     * Constructs an empty instance.
+     * 构造一个空的实例
      */
     PlainSocketImpl() { }
 
     /**
-     * Constructs an instance with the given file descriptor.
+     * 使用给定文件描述符构造一个实例
      */
     PlainSocketImpl(FileDescriptor fd) {
         this.fd = fd;
@@ -53,11 +52,9 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     native void socketCreate(boolean isServer) throws IOException;
 
-    native void socketConnect(InetAddress address, int port, int timeout)
-        throws IOException;
+    native void socketConnect(InetAddress address, int port, int timeout) throws IOException;
 
-    native void socketBind(InetAddress address, int port)
-        throws IOException;
+    native void socketBind(InetAddress address, int port) throws IOException;
 
     native void socketListen(int count) throws IOException;
 
@@ -71,8 +68,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     static native void initProto();
 
-    native void socketSetOption(int cmd, boolean on, Object value)
-        throws SocketException;
+    native void socketSetOption(int cmd, boolean on, Object value) throws SocketException;
 
     native int socketGetOption(int opt, Object iaContainerObj) throws SocketException;
 

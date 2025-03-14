@@ -38,74 +38,58 @@ import sun.nio.ch.Interruptible;
 
 
 /**
- * Base implementation class for interruptible channels.
+ * 用于{@link java.nio.channels.InterruptibleChannel}的基本实现类。
  *
- * <p> This class encapsulates the low-level machinery required to implement
- * the asynchronous closing and interruption of channels.  A concrete channel
- * class must invoke the {@link #begin begin} and {@link #end end} methods
- * before and after, respectively, invoking an I/O operation that might block
- * indefinitely.  In order to ensure that the {@link #end end} method is always
- * invoked, these methods should be used within a
- * <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block:
+ * <p>该类封装了实现channel的异步关闭和中断所需的低级机制。具体的channel类
+ * 必须在调用可能无限期阻塞的I/O操作之前和之后分别调用{@link #begin()}
+ * 和{@link #end(boolean)}方法。为了确保{@link #end(boolean)}方法
+ * 总是被调用，这些方法应该用在try-finally块中。
  *
- * <blockquote><pre>
- * boolean completed = false;
- * try {
- *     begin();
- *     completed = ...;    // Perform blocking I/O operation
- *     return ...;         // Return result
- * } finally {
- *     end(completed);
- * }</pre></blockquote>
+ * <pre>{@code
+ *  try {
+ *      begin();
+ *      completed = ...; // 执行阻塞I/O操作
+ *      return ...; // 返回结果
+ *  } finally {
+ *      end(completed);
+ *  }
+ * }</pre>
  *
- * <p> The <tt>completed</tt> argument to the {@link #end end} method tells
- * whether or not the I/O operation actually completed, that is, whether it had
- * any effect that would be visible to the invoker.  In the case of an
- * operation that reads bytes, for example, this argument should be
- * <tt>true</tt> if, and only if, some bytes were actually transferred into the
- * invoker's target buffer.
+ * <p>{@link #end(boolean)}方法中的{@code completed}参数告知方法
+ * I/O操作是否真的完成，也就是说，它是否产生了对调用者可见的效果。例如：在
+ * 读取字节的操作中，当且仅当一些字节实际被传输到调用者的目标缓冲区中时，
+ * 此参数才应该为true。
  *
- * <p> A concrete channel class must also implement the {@link
- * #implCloseChannel implCloseChannel} method in such a way that if it is
- * invoked while another thread is blocked in a native I/O operation upon the
- * channel then that operation will immediately return, either by throwing an
- * exception or by returning normally.  If a thread is interrupted or the
- * channel upon which it is blocked is asynchronously closed then the channel's
- * {@link #end end} method will throw the appropriate exception.
+ * <p>具体的channel类还必须实现{@link #implCloseChannel()}方法，以便
+ * 如果在另一个线程在channel上的本机I/O操作中被阻塞时调用该方法，则该操作将
+ * 立刻返回，要么抛出异常，要么正常返回。如果线程被阻塞或其阻塞的channel被
+ * 异步关闭，该channel的{@link #end(boolean)}将抛出相应的异常。
  *
- * <p> This class performs the synchronization required to implement the {@link
- * java.nio.channels.Channel} specification.  Implementations of the {@link
- * #implCloseChannel implCloseChannel} method need not synchronize against
- * other threads that might be attempting to close the channel.  </p>
- *
+ * <p>该类执行实现{@link java.nio.channels.Channel}规范所需的同步。
+ * {@link #implCloseChannel()}方法的实现无需与可能试图关闭channel的
+ * 其他线程同步。
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
  */
-
-public abstract class AbstractInterruptibleChannel
-    implements Channel, InterruptibleChannel
-{
+public abstract class AbstractInterruptibleChannel implements Channel, InterruptibleChannel {
 
     private final Object closeLock = new Object();
     private volatile boolean open = true;
 
     /**
-     * Initializes a new instance of this class.
+     * 初始化类的实例
      */
     protected AbstractInterruptibleChannel() { }
 
     /**
-     * Closes this channel.
+     * 关闭该channel。
      *
-     * <p> If the channel has already been closed then this method returns
-     * immediately.  Otherwise it marks the channel as closed and then invokes
-     * the {@link #implCloseChannel implCloseChannel} method in order to
-     * complete the close operation.  </p>
+     * <p>如果channel已经关闭，该方法将立即返回。否则会标记channel为已关闭，
+     * 然后调用{@link #implCloseChannel()}方法来完成关闭操作。
      *
-     * @throws  IOException
-     *          If an I/O error occurs
+     * @throws  IOException 如果发生I/O异常
      */
     public final void close() throws IOException {
         synchronized (closeLock) {
@@ -117,20 +101,15 @@ public abstract class AbstractInterruptibleChannel
     }
 
     /**
-     * Closes this channel.
+     * 关闭该channel。
      *
-     * <p> This method is invoked by the {@link #close close} method in order
-     * to perform the actual work of closing the channel.  This method is only
-     * invoked if the channel has not yet been closed, and it is never invoked
-     * more than once.
+     * <p>该方法被{@link #end(boolean)}方法调用来执行channel关闭的实际工作。
+     * 仅当channel还未被关闭时才会调用该方法，该方法不会被调用多次。
      *
-     * <p> An implementation of this method must arrange for any other thread
-     * that is blocked in an I/O operation upon this channel to return
-     * immediately, either by throwing an exception or by returning normally.
-     * </p>
+     * <p>此方法的实现必须安排在该channel上的I/O操作中被阻塞的任何其他线程
+     * 立即返回，要么抛出异常，要么正常返回。
      *
-     * @throws  IOException
-     *          If an I/O error occurs while closing the channel
+     * @throws  IOException 如果当关闭chanel时发生I/O异常
      */
     protected abstract void implCloseChannel() throws IOException;
 
@@ -139,18 +118,16 @@ public abstract class AbstractInterruptibleChannel
     }
 
 
-    // -- Interruption machinery --
+    // -- 中断机制 --
 
     private Interruptible interruptor;
     private volatile Thread interrupted;
 
     /**
-     * Marks the beginning of an I/O operation that might block indefinitely.
+     * 标记可能会导致无限期阻塞的I/O操作正在开始。
      *
-     * <p> This method should be invoked in tandem with the {@link #end end}
-     * method, using a <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block as
-     * shown <a href="#be">above</a>, in order to implement asynchronous
-     * closing and interruption for this channel.  </p>
+     * <p>该方法应该和{@link #end(boolean)}成对调用，使用try-finally块，
+     * 就像类描述中的实例，以实现对channel的异步关闭和打断。
      */
     protected final void begin() {
         if (interruptor == null) {
@@ -174,23 +151,16 @@ public abstract class AbstractInterruptibleChannel
     }
 
     /**
-     * Marks the end of an I/O operation that might block indefinitely.
+     * 标记可能会导致无限期阻塞的I/O操作已结束。
      *
-     * <p> This method should be invoked in tandem with the {@link #begin
-     * begin} method, using a <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block
-     * as shown <a href="#be">above</a>, in order to implement asynchronous
-     * closing and interruption for this channel.  </p>
+     * <p>该方法应该和{@link #begin()}成对调用，使用try-finally块，
+     * 就像类描述中的实例，以实现对channel的异步关闭和打断。
      *
-     * @param  completed
-     *         <tt>true</tt> if, and only if, the I/O operation completed
-     *         successfully, that is, had some effect that would be visible to
-     *         the operation's invoker
+     * @param  completed 仅当I/O操作成功时，并产生了对调用者可见的效果，返回true
      *
-     * @throws  AsynchronousCloseException
-     *          If the channel was asynchronously closed
+     * @throws  AsynchronousCloseException channel已被异步关闭
      *
-     * @throws  ClosedByInterruptException
-     *          If the thread blocked in the I/O operation was interrupted
+     * @throws  ClosedByInterruptException 阻塞在I/O操作上的线程已被打断
      */
     protected final void end(boolean completed)
         throws AsynchronousCloseException

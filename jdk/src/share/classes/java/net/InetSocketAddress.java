@@ -32,33 +32,36 @@ import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 
 /**
+ * 该类实现一个IP socket 地址，（IP地址+端口号）.
+ * 它也可以是一对（主机名+端口号），在这种情况下将尝试解析主机名。
+ * 如果解析失败，则该地址被视为{@code unresolved}，但仍可在某些
+ * 情况下使用，例如通过代理连接。
  *
- * This class implements an IP Socket Address (IP address + port number)
- * It can also be a pair (hostname + port number), in which case an attempt
- * will be made to resolve the hostname. If resolution fails then the address
- * is said to be <I>unresolved</I> but can still be used on some circumstances
- * like connecting through a proxy.
- * <p>
- * It provides an immutable object used by sockets for binding, connecting, or
- * as returned values.
- * <p>
- * The <i>wildcard</i> is a special local IP address. It usually means "any"
- * and can only be used for {@code bind} operations.
+ * <p>它提供一个不可变对象，供socket绑定、连接或作为返回值。
+ *
+ * <p>{@code wildcard}是一个特殊的本地IP地址。它通常意味着{@code any}
+ * 并且只能被用于{@code bind}操作。
  *
  * @see java.net.Socket
  * @see java.net.ServerSocket
  * @since 1.4
  */
-public class InetSocketAddress
-    extends SocketAddress
-{
-    // Private implementation class pointed to by all public methods.
+public class InetSocketAddress extends SocketAddress {
+    /**
+     * 所有公共方法指向的私有实现类
+     */
     private static class InetSocketAddressHolder {
-        // The hostname of the Socket Address
+        /**
+         * Socket地址的主机名
+         */
         private String hostname;
-        // The IP address of the Socket Address
+        /**
+         * Socket地址的IP地址
+         */
         private InetAddress addr;
-        // The port number of the Socket Address
+        /**
+         * Socket地址的端口号
+         */
         private int port;
 
         private InetSocketAddressHolder(String hostname, InetAddress addr, int port) {

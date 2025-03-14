@@ -26,60 +26,49 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.nio.channels.Channel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 
 /**
- * A channel that can be multiplexed via a {@link Selector}.
+ * 可以通过{@link java.nio.channels.Selector}进行多路复用的通道。
  *
- * <p> In order to be used with a selector, an instance of this class must
- * first be <i>registered</i> via the {@link #register(Selector,int,Object)
- * register} method.  This method returns a new {@link SelectionKey} object
- * that represents the channel's registration with the selector.
+ * <p>为了与selector一起使用，必须首先通过{@link #register(Selector, int, Object)}
+ * 方法来注册该类的实例。该方法返回一个新的{@link java.nio.channels.SelectionKey}对象，
+ * 代表channel和selector的注册。
  *
- * <p> Once registered with a selector, a channel remains registered until it
- * is <i>deregistered</i>.  This involves deallocating whatever resources were
- * allocated to the channel by the selector.
+ * <p>一旦在selector上注册，channel将保留注册直到取消注册。这涉及到释放selector分配
+ * 给channel的所有资源。
  *
- * <p> A channel cannot be deregistered directly; instead, the key representing
- * its registration must be <i>cancelled</i>.  Cancelling a key requests that
- * the channel be deregistered during the selector's next selection operation.
- * A key may be cancelled explicitly by invoking its {@link
- * SelectionKey#cancel() cancel} method.  All of a channel's keys are cancelled
- * implicitly when the channel is closed, whether by invoking its {@link
- * Channel#close close} method or by interrupting a thread blocked in an I/O
- * operation upon the channel.
+ * <p>channel不能直接取消注册，相反，必须通过调用代表channel和selector的注册的
+ * {@link java.nio.channels.SelectionKey#cancel()}方法。取消一个键要求
+ * 在selector的下一次选择操作期间取消注册该channel。当channel关闭时，所有的键
+ * 都会被隐式取消，无论是通过调用其{@link java.nio.channels.Channel#close()}
+ * 还是通过中断channel上I/O操作中阻塞的线程。
  *
- * <p> If the selector itself is closed then the channel will be deregistered,
- * and the key representing its registration will be invalidated, without
- * further delay.
+ * <p>如果selector本身被关闭，然后channel将被取消注册。代表其注册的key将失效，
+ * 不再延迟。
  *
- * <p> A channel may be registered at most once with any particular selector.
+ * <p>一个channel最多可以向任何特定selector注册一次。
  *
- * <p> Whether or not a channel is registered with one or more selectors may be
- * determined by invoking the {@link #isRegistered isRegistered} method.
+ * <p>可以通过调用{@link #isRegistered()}方法来检查
+ * 一个channel是否在一个或多个selector中注册。
  *
- * <p> Selectable channels are safe for use by multiple concurrent
- * threads. </p>
+ * <p>可选择的channel可以被多线程安全的使用。
  *
+ * <h2>阻塞模式</h2>
  *
- * <a name="bm"></a>
- * <h2>Blocking mode</h2>
+ * 一个可选择的channel可以处于阻塞或非阻塞模式。在阻塞模式下，
+ * 在channel上调用的每一个I/O操作将阻塞直到其完成。在非阻塞
+ * 模式下，I/O操作将永远不会阻塞，并且可能传输比请求的更少的
+ * 字节，甚至可能根本不传输字节。可以通过调用{@link #isBlocking()}
+ * 方法来检查是否处于阻塞模式。
  *
- * A selectable channel is either in <i>blocking</i> mode or in
- * <i>non-blocking</i> mode.  In blocking mode, every I/O operation invoked
- * upon the channel will block until it completes.  In non-blocking mode an I/O
- * operation will never block and may transfer fewer bytes than were requested
- * or possibly no bytes at all.  The blocking mode of a selectable channel may
- * be determined by invoking its {@link #isBlocking isBlocking} method.
- *
- * <p> Newly-created selectable channels are always in blocking mode.
- * Non-blocking mode is most useful in conjunction with selector-based
- * multiplexing.  A channel must be placed into non-blocking mode before being
- * registered with a selector, and may not be returned to blocking mode until
- * it has been deregistered.
- *
+ * <p>新创建的可选择的channel总是处于阻塞模式下。非阻塞模式与
+ * 基于selector的多路复用结合使用时最有用。channel在向selector
+ * 注册前必须处于非阻塞模式。直到取消注册后才可能返回阻塞模式。
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -89,20 +78,15 @@ import java.nio.channels.spi.SelectorProvider;
  * @see Selector
  */
 
-public abstract class SelectableChannel
-    extends AbstractInterruptibleChannel
-    implements Channel
-{
+public abstract class SelectableChannel extends AbstractInterruptibleChannel implements Channel {
 
     /**
-     * Initializes a new instance of this class.
+     * 初始化该类的实例
      */
     protected SelectableChannel() { }
 
     /**
-     * Returns the provider that created this channel.
-     *
-     * @return  The provider that created this channel
+     * @return  创建该channel的provider
      */
     public abstract SelectorProvider provider();
 

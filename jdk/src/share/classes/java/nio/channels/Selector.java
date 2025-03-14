@@ -27,129 +27,86 @@ package java.nio.channels;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.Object;
+import java.lang.Object;
+import java.nio.channels.Channel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
 import java.util.Set;
 
 
 /**
- * A multiplexor of {@link SelectableChannel} objects.
+ * {@link java.nio.channels.SelectableChannel}对象的多路复用器。
  *
- * <p> A selector may be created by invoking the {@link #open open} method of
- * this class, which will use the system's default {@link
- * java.nio.channels.spi.SelectorProvider selector provider} to
- * create a new selector.  A selector may also be created by invoking the
- * {@link java.nio.channels.spi.SelectorProvider#openSelector openSelector}
- * method of a custom selector provider.  A selector remains open until it is
- * closed via its {@link #close close} method.
+ * <p>可以通过调用{@link #open()}来创建一个selector，这将会使用系统
+ * 默认的{@link java.nio.channels.spi.SelectorProvider}来创建
+ * 一个新的selector。也可以调用自定义的selector provider的{@link
+ * java.nio.channels.spi.SelectorProvider#openSelector}来创建
+ * 一个新的selector。创建后的selector将保持打开直到使用{@link #close()}
+ * 关闭。
  *
- * <a name="ks"></a>
- *
- * <p> A selectable channel's registration with a selector is represented by a
- * {@link SelectionKey} object.  A selector maintains three sets of selection
- * keys:
- *
+ * <p>可选择的channel与selector的注册由{@link java.nio.channels.SelectionKey}
+ * 代表。一个selector维护三组selection key。
  * <ul>
- *
- *   <li><p> The <i>key set</i> contains the keys representing the current
- *   channel registrations of this selector.  This set is returned by the
- *   {@link #keys() keys} method. </p></li>
- *
- *   <li><p> The <i>selected-key set</i> is the set of keys such that each
- *   key's channel was detected to be ready for at least one of the operations
- *   identified in the key's interest set during a prior selection operation.
- *   This set is returned by the {@link #selectedKeys() selectedKeys} method.
- *   The selected-key set is always a subset of the key set. </p></li>
- *
- *   <li><p> The <i>cancelled-key</i> set is the set of keys that have been
- *   cancelled but whose channels have not yet been deregistered.  This set is
- *   not directly accessible.  The cancelled-key set is always a subset of the
- *   key set. </p></li>
- *
+ *     <li>key set: 包含表示此selector当前channel注册的键。该集合通过{@link #keys()}
+ *     方法可以获取。</li>
+ *     <li>selected-key set: 是一组键，其中每个键的channel在先前的选择操作期间被检测到
+ *     已准备好执行键的兴趣集中标识的至少一个操作。此集合由{@link #selectedKeys()}方法
+ *     返回，selected-key set始终是key set的子集。</li>
+ *     <li>cancelled-key set：是key已经取消，但是channel尚未取消注册的键集合。该键
+ *     不能直接访问，cancelled-key set始终是key set的子集。</li>
  * </ul>
  *
- * <p> All three sets are empty in a newly-created selector.
+ * <p>在新创建的selector中，这三种键集合都为空。
  *
- * <p> A key is added to a selector's key set as a side effect of registering a
- * channel via the channel's {@link SelectableChannel#register(Selector,int)
- * register} method.  Cancelled keys are removed from the key set during
- * selection operations.  The key set itself is not directly modifiable.
+ * <p>通过channel的{@link java.nio.channels.SelectableChannel#register(java.nio.channels.Selector, int)}
+ * 方法注册channel的副作用是将一个键添加到selector的key set中。在选择操作期间，calcelled-key
+ * 将从key set中删除，key set本身不可直接修改。
  *
- * <p> A key is added to its selector's cancelled-key set when it is cancelled,
- * whether by closing its channel or by invoking its {@link SelectionKey#cancel
- * cancel} method.  Cancelling a key will cause its channel to be deregistered
- * during the next selection operation, at which time the key will removed from
- * all of the selector's key sets.
+ * <p>当一个键被取消时，无论是通过{@link java.nio.channels.SelectionKey#cancel()}
+ * 还是{@link java.nio.channels.Channel#close()}方法，都会导致该键被添加到cancelled-key中。
+ * 取消键将导致其channel在下一次选择操作期间被注销，此时该键将从selector中的三个key set中删除。
  *
- * <a name="sks"></a><p> Keys are added to the selected-key set by selection
- * operations.  A key may be removed directly from the selected-key set by
- * invoking the set's {@link java.util.Set#remove(java.lang.Object) remove}
- * method or by invoking the {@link java.util.Iterator#remove() remove} method
- * of an {@link java.util.Iterator iterator} obtained from the
- * set.  Keys are never removed from the selected-key set in any other way;
- * they are not, in particular, removed as a side effect of selection
- * operations.  Keys may not be added directly to the selected-key set. </p>
+ * <p>通过选择操作可以将键添加到selected-key set中。通过对该集合调用{@link
+ * java.util.Set#remove(java.lang.Object)}方法或者是{@link java.util.Iterator#remove()}
+ * 方法来移除键。绝不会以任何其他方式从selected-key set中删除键。
  *
+ * <h2>选择</h2>
  *
- * <a name="selop"></a>
- * <h2>Selection</h2>
- *
- * <p> During each selection operation, keys may be added to and removed from a
- * selector's selected-key set and may be removed from its key and
- * cancelled-key sets.  Selection is performed by the {@link #select()}, {@link
- * #select(long)}, and {@link #selectNow()} methods, and involves three steps:
- * </p>
- *
+ * <p>在每次选择操作期间，键可能被添加到selector的selected-key或从其中移除。也可以将键从
+ * cancelled-key中移除。通过{@link #select()}、{@link #select(long)}、{@link #selectNow()}
+ * 方法执行选择，包括三个步骤：
  * <ol>
+ *     <li>calcelled-key 中的每个键都将从其所属的key set中删除，并且channel将被注销，此步骤
+ *     calcelled-key 为空。</li>
+ *     <li>向底层操作系统查询更新，以确定每个剩余channel是否准备好执行选择操作开始时其键的兴趣集
+ *     所标识的任何操作。对于已准备好执行至少一个此类通道的channel，将执行以下两个操作之一：
+ *      <ol>
+ *          <li>如果channel的键在selected-key set中上不存在，则将其添加到该集合中，
+ *          并修改其就绪操作集以准确标识通道现在已报告为就绪的那些操作。之前记录在就绪集
+ *          中的任何就绪信息将被丢弃。</li>
+ *          <li>否则，如果channel的键已经在selelcted-key set中了，因此其它的就绪操作集
+ *          将被修改，以识别任何报告channel已就绪的新操作，之前记录在就绪集中的任何就绪信息
+ *          都会保留；换句话说，底层系统返回的就绪集按位分离到键的当前就绪集</li>
+ *      </ol>
+ *      如果此步骤开始时key set中的的兴趣集均为空，则selected-key和任何键就绪操作均不会更新。
+ *     </li>
  *
- *   <li><p> Each key in the cancelled-key set is removed from each key set of
- *   which it is a member, and its channel is deregistered.  This step leaves
- *   the cancelled-key set empty. </p></li>
- *
- *   <li><p> The underlying operating system is queried for an update as to the
- *   readiness of each remaining channel to perform any of the operations
- *   identified by its key's interest set as of the moment that the selection
- *   operation began.  For a channel that is ready for at least one such
- *   operation, one of the following two actions is performed: </p>
- *
- *   <ol>
- *
- *     <li><p> If the channel's key is not already in the selected-key set then
- *     it is added to that set and its ready-operation set is modified to
- *     identify exactly those operations for which the channel is now reported
- *     to be ready.  Any readiness information previously recorded in the ready
- *     set is discarded.  </p></li>
- *
- *     <li><p> Otherwise the channel's key is already in the selected-key set,
- *     so its ready-operation set is modified to identify any new operations
- *     for which the channel is reported to be ready.  Any readiness
- *     information previously recorded in the ready set is preserved; in other
- *     words, the ready set returned by the underlying system is
- *     bitwise-disjoined into the key's current ready set. </p></li>
- *
- *   </ol>
- *
- *   If all of the keys in the key set at the start of this step have empty
- *   interest sets then neither the selected-key set nor any of the keys'
- *   ready-operation sets will be updated.
- *
- *   <li><p> If any keys were added to the cancelled-key set while step (2) was
- *   in progress then they are processed as in step (1). </p></li>
- *
+ *     <li>如果在步骤2的执行中有任何键被添加到cancelled-key中，则它们将按照步骤1进行处理。</li>
  * </ol>
  *
- * <p> Whether or not a selection operation blocks to wait for one or more
- * channels to become ready, and if so for how long, is the only essential
- * difference between the three selection methods. </p>
+ * <p>选择操作是否阻塞以等待一个或多个channel准备就绪，如果是，则阻塞多长时间，是这三个
+ * 选择方法之间的唯一本质的区别。
  *
+ * <h2>并发</h2>
  *
- * <h2>Concurrency</h2>
+ * <p>selector本身可以被多个并发线程安全使用，但是它们的key set却不是。
  *
- * <p> Selectors are themselves safe for use by multiple concurrent threads;
- * their key sets, however, are not.
+ * <p>选择操作按顺序在selector本身、key set和selected-key set上同步。
+ * 它们还在上述步骤（1）和（3）中对cancelled-key进行同步。
  *
- * <p> The selection operations synchronize on the selector itself, on the key
- * set, and on the selected-key set, in that order.  They also synchronize on
- * the cancelled-key set during steps (1) and (3) above.
+ * <p>
  *
  * <p> Changes made to the interest sets of a selector's keys while a
  * selection operation is in progress have no effect upon that operation; they

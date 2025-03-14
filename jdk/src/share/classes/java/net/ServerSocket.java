@@ -27,20 +27,18 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.net.SocketImplFactory;
 import java.nio.channels.ServerSocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 
 /**
- * This class implements server sockets. A server socket waits for
- * requests to come in over the network. It performs some operation
- * based on that request, and then possibly returns a result to the requester.
- * <p>
- * The actual work of the server socket is performed by an instance
- * of the {@code SocketImpl} class. An application can
- * change the socket factory that creates the socket
- * implementation to configure itself to create sockets
- * appropriate to the local firewall.
+ * 该类实现了服务端的sockets。服务端socket等待通过网络传入的请求。
+ * 它会基于该请求执行某些操作，然后可能返回一个结果给发送请求的客户端。
+ *
+ * <p>服务端socket的实际工作由{@link java.net.SocketImpl}的实例
+ * 负责执行。一个应用可以修改创建socket实现的的socket工厂，以配置自身
+ * 来创建适应本地防火墙的socket。
  *
  * @author  unascribed
  * @see     java.net.SocketImpl
@@ -50,37 +48,50 @@ import java.security.PrivilegedExceptionAction;
  */
 public
 class ServerSocket implements java.io.Closeable {
+    //-----------------------------------------
+    // 该socket的各种状态
+    //-----------------------------------------
+
     /**
-     * Various states of this socket.
+     * 是否已创建
      */
     private boolean created = false;
+    /**
+     * 是否已绑定
+     */
     private boolean bound = false;
+    /**
+     * 是否已关闭
+     */
     private boolean closed = false;
+    /**
+     * 关闭锁
+     */
     private Object closeLock = new Object();
 
     /**
-     * The implementation of this Socket.
+     * Socket的实现
      */
     private SocketImpl impl;
 
     /**
-     * Are we using an older SocketImpl?
+     * 是否使用了较旧的SocketImpl
      */
     private boolean oldImpl = false;
 
     /**
-     * Package-private constructor to create a ServerSocket associated with
-     * the given SocketImpl.
+     * 用于创建关联给定SocketImpl的ServerSocket的包私有构造器
      */
     ServerSocket(SocketImpl impl) {
         this.impl = impl;
+        // 引用该ServerSocket
         impl.setServerSocket(this);
     }
 
     /**
-     * Creates an unbound server socket.
+     * 创建一个未绑定的server socket
      *
-     * @exception IOException IO error when opening the socket.
+     * @exception IOException 当打开socket是出现IO错误
      * @revised 1.4
      */
     public ServerSocket() throws IOException {
@@ -88,36 +99,26 @@ class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Creates a server socket, bound to the specified port. A port number
-     * of {@code 0} means that the port number is automatically
-     * allocated, typically from an ephemeral port range. This port
-     * number can then be retrieved by calling {@link #getLocalPort getLocalPort}.
-     * <p>
-     * The maximum queue length for incoming connection indications (a
-     * request to connect) is set to {@code 50}. If a connection
-     * indication arrives when the queue is full, the connection is refused.
-     * <p>
-     * If the application has specified a server socket factory, that
-     * factory's {@code createSocketImpl} method is called to create
-     * the actual socket implementation. Otherwise a "plain" socket is created.
-     * <p>
-     * If there is a security manager,
-     * its {@code checkListen} method is called
-     * with the {@code port} argument
-     * as its argument to ensure the operation is allowed.
-     * This could result in a SecurityException.
+     * 创建一个server socket，绑定到指定端口。端口号为{@code 0}
+     * 意味着自动分配端口号，通常来自临时端口范围。之后可以通过
+     * {@link #getLocalPort()}来获取端口号。
      *
+     * <p>传入连接指示（连接请求）的最大队列长度设置为{@code 50}。
+     * 如果在队列已满时收到连接指示，则拒绝连接。
      *
-     * @param      port  the port number, or {@code 0} to use a port
-     *                   number that is automatically allocated.
+     * <p>如果应用指定server socket工厂，则调用工厂的{@link java.net.SocketImplFactory#createSocketImpl()}
+     * 来创建Socket实现，否则将创建一个plain socket。
      *
-     * @exception  IOException  if an I/O error occurs when opening the socket.
-     * @exception  SecurityException
-     * if a security manager exists and its {@code checkListen}
-     * method doesn't allow the operation.
-     * @exception  IllegalArgumentException if the port parameter is outside
-     *             the specified range of valid port values, which is between
-     *             0 and 65535, inclusive.
+     * <p>如果有安全管理器，则使用{@link port}参数作为其参数调用
+     * 其{@link java.lang.SecurityManager#checkListen(int)}方法，
+     * 以确保允许该操作，这可能会导致{@link java.net.SocketException}。
+     *
+     * @param      port  端口号, 或{@code 0}代表使用自动分配的端口号
+     *
+     * @exception  IOException  如果打开socket时发生I/O异常
+     * @exception  SecurityException 如果一个安全管理器存在，且{@link java.lang.SecurityManager#checkListen(int)}
+     * 方法不允许该操作
+     * @exception  IllegalArgumentException 如果端口号超出了指定的有效端口值范围[0, 65535]
      *
      * @see        java.net.SocketImpl
      * @see        java.net.SocketImplFactory#createSocketImpl()
@@ -129,48 +130,32 @@ class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Creates a server socket and binds it to the specified local port
-     * number, with the specified backlog.
-     * A port number of {@code 0} means that the port number is
-     * automatically allocated, typically from an ephemeral port range.
-     * This port number can then be retrieved by calling
-     * {@link #getLocalPort getLocalPort}.
-     * <p>
-     * The maximum queue length for incoming connection indications (a
-     * request to connect) is set to the {@code backlog} parameter. If
-     * a connection indication arrives when the queue is full, the
-     * connection is refused.
-     * <p>
-     * If the application has specified a server socket factory, that
-     * factory's {@code createSocketImpl} method is called to create
-     * the actual socket implementation. Otherwise a "plain" socket is created.
-     * <p>
-     * If there is a security manager,
-     * its {@code checkListen} method is called
-     * with the {@code port} argument
-     * as its argument to ensure the operation is allowed.
-     * This could result in a SecurityException.
+     * 创建一个server socket，绑定到指定端口号，并指定backlog。
+     * 端口号为{@code 0}意味着自动分配端口号，通常来自临时端口范围。
+     * 之后可以通过 {@link #getLocalPort()}来获取端口号。
      *
-     * The {@code backlog} argument is the requested maximum number of
-     * pending connections on the socket. Its exact semantics are implementation
-     * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
-     * should be greater than {@code 0}. If it is less than or equal to
-     * {@code 0}, then an implementation specific default will be used.
-     * <P>
+     * <p>传入连接指示（连接请求）的最大队列长度设置为{@code backlog}。
+     * 如果在队列已满时收到连接指示，则拒绝连接。
      *
-     * @param      port     the port number, or {@code 0} to use a port
-     *                      number that is automatically allocated.
-     * @param      backlog  requested maximum length of the queue of incoming
-     *                      connections.
+     * <p>如果应用指定server socket工厂，则调用工厂的{@link java.net.SocketImplFactory#createSocketImpl()}
+     * 来创建Socket实现，否则将创建一个plain socket。
      *
-     * @exception  IOException  if an I/O error occurs when opening the socket.
-     * @exception  SecurityException
-     * if a security manager exists and its {@code checkListen}
-     * method doesn't allow the operation.
-     * @exception  IllegalArgumentException if the port parameter is outside
-     *             the specified range of valid port values, which is between
-     *             0 and 65535, inclusive.
+     * <p>如果有安全管理器，则使用{@link port}参数作为其参数调用
+     * 其{@link java.lang.SecurityManager#checkListen(int)}方法，
+     * 以确保允许该操作，这可能会导致{@link java.net.SocketException}。
+     *
+     * <p>{@code backlog}参数是socket上请求的最大待处理连接数。
+     * 其确切语义与具体实现相关。具体来说，实现可能会施加最大长度，
+     * 或者可以选择完全忽略该参数。提供的值应该大于{@code 0}。
+     * 如果小于等于{@code 0}，则将使用特定于实现的默认值。
+     *
+     * @param      port     端口号, 或{@code 0}代表使用自动分配的端口号
+     * @param      backlog  请求的传入连接队列的最大长度
+     *
+     * @exception  IOException  如果打开socket时发生I/O错误
+     * @exception  SecurityException 如果一个安全管理器存在，且{@link java.lang.SecurityManager#checkListen(int)}
+     * 方法不允许该操作
+     * @exception  IllegalArgumentException 如果端口号超出了指定的有效端口值范围[0, 65535]
      *
      * @see        java.net.SocketImpl
      * @see        java.net.SocketImplFactory#createSocketImpl()
@@ -182,44 +167,29 @@ class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Create a server with the specified port, listen backlog, and
-     * local IP address to bind to.  The <i>bindAddr</i> argument
-     * can be used on a multi-homed host for a ServerSocket that
-     * will only accept connect requests to one of its addresses.
-     * If <i>bindAddr</i> is null, it will default accepting
-     * connections on any/all local addresses.
-     * The port must be between 0 and 65535, inclusive.
-     * A port number of {@code 0} means that the port number is
-     * automatically allocated, typically from an ephemeral port range.
-     * This port number can then be retrieved by calling
-     * {@link #getLocalPort getLocalPort}.
+     * 创建一个server socket，绑定到指定端口，指定backlog，并绑定到本地IP地址。
+     * {@code bindAddr}参数可用于多宿主主机上的Server Socket，该主机仅接受
+     * 对某个地址的连接请求。端口号应该在[0, 65535]。端口号为{@code 0}意味着
+     * 自动分配端口号，通常来自临时端口范围。之后可以通过 {@link #getLocalPort()}
+     * 来获取端口号。
      *
-     * <P>If there is a security manager, this method
-     * calls its {@code checkListen} method
-     * with the {@code port} argument
-     * as its argument to ensure the operation is allowed.
-     * This could result in a SecurityException.
+     * <p>如果有安全管理器，则使用{@link port}参数作为其参数调用
+     * 其{@link java.lang.SecurityManager#checkListen(int)}方法，
+     * 以确保允许该操作，这可能会导致{@link java.net.SocketException}。
      *
-     * The {@code backlog} argument is the requested maximum number of
-     * pending connections on the socket. Its exact semantics are implementation
-     * specific. In particular, an implementation may impose a maximum length
-     * or may choose to ignore the parameter altogther. The value provided
-     * should be greater than {@code 0}. If it is less than or equal to
-     * {@code 0}, then an implementation specific default will be used.
-     * <P>
-     * @param port  the port number, or {@code 0} to use a port
-     *              number that is automatically allocated.
-     * @param backlog requested maximum length of the queue of incoming
-     *                connections.
-     * @param bindAddr the local InetAddress the server will bind to
+     * <p>{@code backlog}参数是socket上请求的最大待处理连接数。
+     * 其确切语义与具体实现相关。具体来说，实现可能会施加最大长度，
+     * 或者可以选择完全忽略该参数。提供的值应该大于{@code 0}。
+     * 如果小于等于{@code 0}，则将使用特定于实现的默认值。
      *
-     * @throws  SecurityException if a security manager exists and
-     * its {@code checkListen} method doesn't allow the operation.
+     * @param port  端口号, 或{@code 0}代表使用自动分配的端口号
+     * @param backlog 请求的传入连接队列的最大长度
+     * @param bindAddr 该服务将绑定的本地ip地址
      *
-     * @throws  IOException if an I/O error occurs when opening the socket.
-     * @exception  IllegalArgumentException if the port parameter is outside
-     *             the specified range of valid port values, which is between
-     *             0 and 65535, inclusive.
+     * @throws  SecurityException 如果一个安全管理器存在，且{@link java.lang.SecurityManager#checkListen(int)}
+     *
+     * @throws  IOException 如果打开socket时发生I/O错误
+     * @exception  IllegalArgumentException 如果端口号超出了指定的有效端口值范围[0, 65535]
      *
      * @see SocketOptions
      * @see SocketImpl
@@ -227,18 +197,24 @@ class ServerSocket implements java.io.Closeable {
      * @since   JDK1.1
      */
     public ServerSocket(int port, int backlog, InetAddress bindAddr) throws IOException {
+        // 设置为系统默认类型的SocketImpl
         setImpl();
+        // 检查端口是否在[0, 65535]，否则抛出异常
         if (port < 0 || port > 0xFFFF)
             throw new IllegalArgumentException(
                        "Port value out of range: " + port);
+        // 默认为50
         if (backlog < 1)
           backlog = 50;
         try {
+            // 绑定到本地ip和端口，并设置backlog
             bind(new InetSocketAddress(bindAddr, port), backlog);
         } catch(SecurityException e) {
+            // 安全管理器存在，且{@code checkListen}报错
             close();
             throw e;
         } catch(IOException e) {
+            // 打开socket报错
             close();
             throw e;
         }
@@ -280,30 +256,35 @@ class ServerSocket implements java.io.Closeable {
 
     private void setImpl() {
         if (factory != null) {
+            // 存在SocketImplFactory，则使用工厂来创建SocketImpl实例
             impl = factory.createSocketImpl();
             checkOldImpl();
         } else {
-            // No need to do a checkOldImpl() here, we know it's an up to date
-            // SocketImpl!
+            // 无需在此处调用checkOldImpl()，我们知道这是最新的SocketImpl
             impl = new SocksSocketImpl();
         }
         if (impl != null)
+            // 创建成功后，引用该ServerSocket
             impl.setServerSocket(this);
     }
 
     /**
-     * Creates the socket implementation.
+     * 创建socket实现
      *
-     * @throws IOException if creation fails
+     * @throws IOException 如果创建失败
      * @since 1.4
      */
     void createImpl() throws SocketException {
         if (impl == null)
+            // 使用系统默认类型的SocketImpl
             setImpl();
         try {
+            // 更新为已创建
             impl.create(true);
+            // 同步更新已创建
             created = true;
         } catch (IOException e) {
+            // 创建失败，抛出socket异常
             throw new SocketException(e.getMessage());
         }
     }
@@ -764,7 +745,7 @@ class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * The factory for all server sockets.
+     * 用于所有服务端sockets的工厂
      */
     private static SocketImplFactory factory = null;
 

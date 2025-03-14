@@ -30,28 +30,22 @@ import java.util.List;
 import sun.security.util.SecurityConstants;
 
 /**
- * Selects the proxy server to use, if any, when connecting to the
- * network resource referenced by a URL. A proxy selector is a
- * concrete sub-class of this class and is registered by invoking the
- * {@link java.net.ProxySelector#setDefault setDefault} method. The
- * currently registered proxy selector can be retrieved by calling
- * {@link java.net.ProxySelector#getDefault getDefault} method.
+ * 选择连接到URL引用的网络资源时要使用的代理服务器（如果有）。
+ * 代理选择器是一个此类的具体子类，通过调用{@link #setDefault(java.net.ProxySelector)}
+ * 来进行注册。可以通过调用{@link #getDefault()}
+ * 来获取注册的代理选择器。
  *
- * <p> When a proxy selector is registered, for instance, a subclass
- * of URLConnection class should call the {@link #select select}
- * method for each URL request so that the proxy selector can decide
- * if a direct, or proxied connection should be used. The {@link
- * #select select} method returns an iterator over a collection with
- * the preferred connection approach.
+ * <p>当注册了一个代理选择器，例如{@link java.net.URLConnection}
+ * 的子类应该为每一个URL请求均调用{@link #select(URI)}方法，以便
+ * 代理选择器可以决定是否应使用直接连接或代理连接。{@link #select(URI)}
+ * 方法返回一个具有首选连接方法的集合迭代器。
  *
- * <p> If a connection cannot be established to a proxy (PROXY or
- * SOCKS) servers then the caller should call the proxy selector's
- * {@link #connectFailed connectFailed} method to notify the proxy
- * selector that the proxy server is unavailable. </p>
+ * <p>如果无法与代理服务器（例如HTTP或SOCKS）建立连接，则调用者应调用
+ * {@link #connectFailed(URI, SocketAddress, IOException)}方法
+ * 来通知代理选择器该代理服务器不可达。
  *
- * <P>The default proxy selector does enforce a
- * <a href="doc-files/net-properties.html#Proxies">set of System Properties</a>
- * related to proxy settings.</P>
+ * <p>默认的代理选择器强制执行与代理设置相关的<a href="doc-files/net-properties.html#Proxies">
+ * 系统属性集合</a>
  *
  * @author Yingxian Wang
  * @author Jean-Christophe Collet
@@ -59,9 +53,8 @@ import sun.security.util.SecurityConstants;
  */
 public abstract class ProxySelector {
     /**
-     * The system wide proxy selector that selects the proxy server to
-     * use, if any, when connecting to a remote object referenced by
-     * an URL.
+     * 系统范围的代理选择器，用于在连接到URL引用的远程对象时
+     * 选择要使用的代理服务器（如果有）
      *
      * @see #setDefault(ProxySelector)
      */
@@ -69,6 +62,7 @@ public abstract class ProxySelector {
 
     static {
         try {
+            // 使用系统默认的代理选择器
             Class<?> c = Class.forName("sun.net.spi.DefaultProxySelector");
             if (c != null && ProxySelector.class.isAssignableFrom(c)) {
                 theProxySelector = (ProxySelector) c.newInstance();
@@ -79,11 +73,9 @@ public abstract class ProxySelector {
     }
 
     /**
-     * Gets the system-wide proxy selector.
+     * 获取系统范围的代理选择器
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getProxySelector")}
+     * @throws  SecurityException 如果安全管理器已被初始化并且它拒绝{@link java.net.NetPermission}
      * @see #setDefault(ProxySelector)
      * @return the system-wide {@code ProxySelector}
      * @since 1.5
@@ -97,16 +89,13 @@ public abstract class ProxySelector {
     }
 
     /**
-     * Sets (or unsets) the system-wide proxy selector.
+     * 设置或取消设置系统范围的代理选择器
      *
-     * Note: non-standard protocol handlers may ignore this setting.
+     * 请注意：非标准协议处理器可能忽略该设置
      *
-     * @param ps The HTTP proxy selector, or
-     *          {@code null} to unset the proxy selector.
+     * @param ps HTTP代理选择器，如果为{@code null}则取消设置代理选择器
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setProxySelector")}
+     * @throws  SecurityException 如果安全管理器已被初始化并且它拒绝
      *
      * @see #getDefault()
      * @since 1.5
@@ -120,46 +109,34 @@ public abstract class ProxySelector {
     }
 
     /**
-     * Selects all the applicable proxies based on the protocol to
-     * access the resource with and a destination address to access
-     * the resource at.
-     * The format of the URI is defined as follow:
-     * <UL>
-     * <LI>http URI for http connections</LI>
-     * <LI>https URI for https connections
-     * <LI>{@code socket://host:port}<br>
-     *     for tcp client sockets connections</LI>
-     * </UL>
+     * 根据访问资源的协议和访问资源的目标地址选择所有适用的代理。
      *
-     * @param   uri
-     *          The URI that a connection is required to
+     * URI的格式定义如下：
+     * <ul>
+     *     <li>用于http连接的http URI</li>
+     *     <li>用于https连接的https URI</li>
+     *     <li>用于tcp客户端sockets连接的{@code socket://host:port}</li>
+     * </ul>
      *
-     * @return  a List of Proxies. Each element in the
-     *          the List is of type
-     *          {@link java.net.Proxy Proxy};
-     *          when no proxy is available, the list will
-     *          contain one element of type
-     *          {@link java.net.Proxy Proxy}
-     *          that represents a direct connection.
-     * @throws IllegalArgumentException if the argument is null
+     * @param   uri 需要连接才能访问的URI
+     *
+     * @return  代理列表。列表中的每个元素都是{@link java.net.Proxy}类型。
+     * 当没有代理可用时，该列表将包含一个{@link java.net.Proxy}类型的元素，
+     * 代表直接连接。
+     * @throws IllegalArgumentException 如果参数为空
      */
     public abstract List<Proxy> select(URI uri);
 
     /**
-     * Called to indicate that a connection could not be established
-     * to a proxy/socks server. An implementation of this method can
-     * temporarily remove the proxies or reorder the sequence of
-     * proxies returned by {@link #select(URI)}, using the address
-     * and the IOException caught when trying to connect.
+     * 调用以指示连接无法与代理服务器建立连接。该方法的实现可以暂时删除代理
+     * 或重新排序{@link #select(URI)}返回的代理序列，使用地址和尝试连接
+     * 时捕获的IOException。
      *
-     * @param   uri
-     *          The URI that the proxy at sa failed to serve.
-     * @param   sa
-     *          The socket address of the proxy/SOCKS server
+     * @param   uri Socket地址处的代理无法处理的URI
+     * @param   sa 代理服务其的socket地址
      *
-     * @param   ioe
-     *          The I/O exception thrown when the connect failed.
-     * @throws IllegalArgumentException if either argument is null
+     * @param   ioe 当连接失败时抛出IOException
+     * @throws IllegalArgumentException 如果任一参数为空
      */
     public abstract void connectFailed(URI uri, SocketAddress sa, IOException ioe);
 }

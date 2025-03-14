@@ -29,53 +29,46 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.Thread;
+import java.nio.channels.Channel;
 
 
 /**
- * A channel that can be asynchronously closed and interrupted.
+ * 可以被异步关闭和打断的channel。
  *
- * <p> A channel that implements this interface is <i>asynchronously
- * closeable:</i> If a thread is blocked in an I/O operation on an
- * interruptible channel then another thread may invoke the channel's {@link
- * #close close} method.  This will cause the blocked thread to receive an
- * {@link AsynchronousCloseException}.
+ * <p>实现该接口的channel是可异步关闭的：如果线程在一个可打断的channel上的
+ * I/O操作中被阻塞，那么另一个线程可以调用channel的{@link #close()}方法。
+ * 这会导致被阻塞的线程收到一个{@link java.nio.channels.AsynchronousCloseException}异常。
  *
- * <p> A channel that implements this interface is also <i>interruptible:</i>
- * If a thread is blocked in an I/O operation on an interruptible channel then
- * another thread may invoke the blocked thread's {@link Thread#interrupt()
- * interrupt} method.  This will cause the channel to be closed, the blocked
- * thread to receive a {@link ClosedByInterruptException}, and the blocked
- * thread's interrupt status to be set.
+ * <p>实现该接口的channel同时也是可打断的：如果线程在一个可打断的channel上的
+ * I/O操作中被阻塞，那么另一个线程可以调用阻塞线程的{@link java.lang.Thread#interrupt()}
+ * 方法，这回导致被阻塞的线程收到一个{@link java.nio.channels.ClosedByInterruptException}
+ * 异常，然后将设置被阻塞线程的打断状态。
  *
- * <p> If a thread's interrupt status is already set and it invokes a blocking
- * I/O operation upon a channel then the channel will be closed and the thread
- * will immediately receive a {@link ClosedByInterruptException}; its interrupt
- * status will remain set.
+ * <p>如果线程的阻塞状态已经被设置，然后该线程在channel上调用阻塞I/O操作，
+ * 然后该channel将被关闭，并且线程会立即收到{@link java.nio.channels.ClosedByInterruptException}异常，
+ * 线程的打断状态将被保留。
  *
- * <p> A channel supports asynchronous closing and interruption if, and only
- * if, it implements this interface.  This can be tested at runtime, if
- * necessary, via the <tt>instanceof</tt> operator.
- *
+ * <p>当且仅当实现此接口时，channel才支持异步关闭和打断。如有必要，可以在运行时
+ * 通过{@code instanceof}运算符进行测试。
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
  */
 
-public interface InterruptibleChannel
-    extends Channel
-{
+public interface InterruptibleChannel extends Channel {
 
     /**
-     * Closes this channel.
+     * 关闭channel。
      *
-     * <p> Any thread currently blocked in an I/O operation upon this channel
-     * will receive an {@link AsynchronousCloseException}.
+     * <p>任何在该channel上的I/O操作被阻塞的线程都会收到一个
+     * {@link java.nio.channels.AsynchronousCloseException}异常。
      *
-     * <p> This method otherwise behaves exactly as specified by the {@link
-     * Channel#close Channel} interface.  </p>
+     * <p>该方法的行为与{@link java.nio.channels.Channel#close()}
+     * 接口指定的行为完全一致。
      *
-     * @throws  IOException  If an I/O error occurs
+     * @throws  IOException  如果发生I/O错误
      */
     public void close() throws IOException;
 

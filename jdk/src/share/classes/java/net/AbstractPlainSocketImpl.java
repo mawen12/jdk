@@ -35,47 +35,66 @@ import sun.net.NetHooks;
 import sun.net.ResourceManager;
 
 /**
- * Default Socket Implementation. This implementation does
- * not implement any security checks.
- * Note this class should <b>NOT</b> be public.
+ * 默认的socket实现，该实现不会实现任何安全检查。
+ *
+ * <p>请注意，该类不应该为public。
  *
  * @author  Steven B. Byrne
  */
 abstract class AbstractPlainSocketImpl extends SocketImpl
 {
-    /* instance variable for SO_TIMEOUT */
-    int timeout;   // timeout in millisec
-    // traffic class
+    /**
+     * 用于 SO_TIMEOUT 的实例变量，毫秒单位
+     */
+    int timeout;
+    /**
+     * 流量类别
+     */
     private int trafficClass;
 
     private boolean shut_rd = false;
     private boolean shut_wr = false;
 
+    /**
+     * socket输入流
+     */
     private SocketInputStream socketInputStream = null;
+    /**
+     * socket输出流
+     */
     private SocketOutputStream socketOutputStream = null;
 
-    /* number of threads using the FileDescriptor */
+    /**
+     * 使用{@link FileDescriptor}的线程总数
+     */
     protected int fdUseCount = 0;
 
-    /* lock when increment/decrementing fdUseCount */
+    /**
+     * 增加或减少{@link #fdUseCount}时锁定
+     */
     protected final Object fdLock = new Object();
 
-    /* indicates a close is pending on the file descriptor */
+    /**
+     * 表示文件描述符上有待关闭
+     */
     protected boolean closePending = false;
 
-    /* indicates connection reset state */
+    /**
+     * 表示连接重置状态
+     */
     private int CONNECTION_NOT_RESET = 0;
     private int CONNECTION_RESET_PENDING = 1;
     private int CONNECTION_RESET = 2;
     private int resetState;
     private final Object resetLock = new Object();
 
-   /* whether this Socket is a stream (TCP) socket or not (UDP)
-    */
+    /**
+     * socket是否是stream(TCP)或非stream(UDP)
+     */
     protected boolean stream;
 
     /**
-     * Load net library into runtime.
+     * 将net库加载到运行时
      */
     static {
         java.security.AccessController.doPrivileged(
@@ -88,125 +107,164 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     }
 
     /**
-     * Creates a socket with a boolean that specifies whether this
-     * is a stream socket (true) or an unconnected UDP socket (false).
+     * 创建一个具有布尔值的socket，该布尔值指定这是一个stream socket或
+     * 未连接的UDP socket
      */
     protected synchronized void create(boolean stream) throws IOException {
         this.stream = stream;
-        if (!stream) {
+        if (!stream) {// 创建 UDP socket
             ResourceManager.beforeUdpCreate();
-            // only create the fd after we know we will be able to create the socket
+            // 只有在我们直到能够创建socket后才能创建 fd
             fd = new FileDescriptor();
             try {
+                // 创建客户端socket
                 socketCreate(false);
             } catch (IOException ioe) {
                 ResourceManager.afterUdpClose();
                 fd = null;
                 throw ioe;
             }
-        } else {
+        } else { // 创建 TCP socket
             fd = new FileDescriptor();
+            // 创建服务端 socket
             socketCreate(true);
         }
         if (socket != null)
+            // 更新客户端socket状态为已创建
             socket.setCreated();
         if (serverSocket != null)
+            // 更新服务端socket状态为已创建
             serverSocket.setCreated();
     }
 
     /**
-     * Creates a socket and connects it to the specified port on
-     * the specified host.
-     * @param host the specified host
-     * @param port the specified port
+     * 创建一个socket并将它连接到指定主机的指定端口上。
+     *
+     * @param host 指定主机
+     * @param port 指定端口
      */
-    protected void connect(String host, int port)
-        throws UnknownHostException, IOException
-    {
+    protected void connect(String host, int port) throws UnknownHostException, IOException {
         boolean connected = false;
         try {
+            // 解析主机名，获得IP地址
             InetAddress address = InetAddress.getByName(host);
             this.port = port;
             this.address = address;
 
+            // 连接到指定IP地址，并设置超时时间
             connectToAddress(address, port, timeout);
+            // 更新为已连接
             connected = true;
         } finally {
             if (!connected) {
                 try {
+                    // 未能连接成功时，关闭socket
                     close();
                 } catch (IOException ioe) {
-                    /* Do nothing. If connect threw an exception then
-                       it will be passed up the call stack */
+                    // 不要做任何事情，如果连接抛出异常，然后它将会被传递到调用栈中。
                 }
             }
         }
     }
 
     /**
-     * Creates a socket and connects it to the specified address on
-     * the specified port.
-     * @param address the address
-     * @param port the specified port
+     * 创建一个socket并将它连接到指定地址的指定端口上
+     *
+     * @param address IP地址
+     * @param port 指定端口
      */
     protected void connect(InetAddress address, int port) throws IOException {
         this.port = port;
         this.address = address;
 
         try {
+            // 连接到指定IP
             connectToAddress(address, port, timeout);
             return;
         } catch (IOException e) {
-            // everything failed
+            // 有任何失败，则抛出关闭并抛出异常
             close();
             throw e;
         }
     }
 
     /**
-     * Creates a socket and connects it to the specified address on
-     * the specified port.
-     * @param address the address
-     * @param timeout the timeout value in milliseconds, or zero for no timeout.
-     * @throws IOException if connection fails
-     * @throws  IllegalArgumentException if address is null or is a
-     *          SocketAddress subclass not supported by this socket
+     * 创建一个socket，并将其连接到指定地址的指定端口上
+     *
+     * @param address IP地址
+     * @param timeout 以毫秒为单位的超时时间，或零表示无超时
+     * @throws IOException 如果连接失败时
+     * @throws  IllegalArgumentException 如果地址为空，或该socket不支持SockerAdress的子类
      * @since 1.4
      */
-    protected void connect(SocketAddress address, int timeout)
-            throws IOException {
+    protected void connect(SocketAddress address, int timeout) throws IOException {
         boolean connected = false;
         try {
+            // 地址必须为IP协议地址
             if (address == null || !(address instanceof InetSocketAddress))
                 throw new IllegalArgumentException("unsupported address type");
             InetSocketAddress addr = (InetSocketAddress) address;
+            // 如果主机名未被转换为IP地址，则报错
             if (addr.isUnresolved())
                 throw new UnknownHostException(addr.getHostName());
             this.port = addr.getPort();
             this.address = addr.getAddress();
 
+            // 在指定时间内连接到指定地址和端口
             connectToAddress(this.address, port, timeout);
+            // 更新为已连接状态
             connected = true;
         } finally {
             if (!connected) {
                 try {
+                    // 未能连接，则关闭socket
                     close();
                 } catch (IOException ioe) {
-                    /* Do nothing. If connect threw an exception then
-                       it will be passed up the call stack */
+                    // 不要做任何事情，如果连接抛出异常，然后它将会被传递到调用栈中。
                 }
             }
         }
     }
 
+    /**
+     * 在指定时间内连接到指定IP地址和指定端口
+     *
+     * @param address IP地址
+     * @param port 端口
+     * @param timeout 超时时间
+     * @throws IOException 连接时发生异常
+     */
     private void connectToAddress(InetAddress address, int port, int timeout) throws IOException {
         if (address.isAnyLocalAddress()) {
+            // 对于本地地址，则使用本地IP进行连接
             doConnect(InetAddress.getLocalHost(), port, timeout);
         } else {
             doConnect(address, port, timeout);
         }
     }
 
+    /**
+     * 设置选项，支持的选项有：
+     * <ul>
+     *     <li>SO_LINGER: 启用后，close(2)或shutdown(2)将不会返回，直到socket的
+     *     所有排队消息都已成功发送或已达到停留超时。否则，调用将立即返回，并在后台完成
+     *     关闭。当socket作为exit(2)的一部分关闭时，它始终停留在后台。</li>
+     *     <li>SO_TIMEOUT:</li>
+     *     <li>IP_TOS:</li>
+     *     <li>SO_BINDADDR:</li>
+     *     <li>TCP_NODELAY:</li>
+     *     <li>SO_SNDBUF:</li>
+     *     <li>SO_RCVBUF:</li>
+     *     <li>SO_KEEPALIVE: 启用面向连接的socket上的保持活动消息发送</li>
+     *     <li>SO_OOBINLINE:</li>
+     *     <li>SO_RESUEADDR:</li>
+     * </ul>
+     *
+     *
+     * @param opt
+     * @param val
+     * @throws SocketException
+     */
     public void setOption(int opt, Object val) throws SocketException {
         if (isClosedOrPending()) {
             throw new SocketException("Socket Closed");
@@ -328,36 +386,42 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     }
 
     /**
-     * The workhorse of the connection operation.  Tries several times to
-     * establish a connection to the given <host, port>.  If unsuccessful,
-     * throws an IOException indicating what went wrong.
+     * 连接操作的主力。多次尝试与给定的 <host, port> 建立连接。如果不成功，
+     * 则抛出{@link IOException}以指示出错的原因。
+     *
+     * @param address IP地址
+     * @param port 端口
+     * @param timeout 超时时间
+     * @throws IOException 连接时发生
      */
-
     synchronized void doConnect(InetAddress address, int port, int timeout) throws IOException {
+        // 在连接之前加锁
         synchronized (fdLock) {
             if (!closePending && (socket == null || !socket.isBound())) {
                 NetHooks.beforeTcpConnect(fd, address, port);
             }
         }
         try {
+            // 获取并自增fdUseCount
             acquireFD();
             try {
+                // 建立连接
                 socketConnect(address, port, timeout);
-                /* socket may have been closed during poll/select */
+                // 在 poll/select 期间socket可能被关闭了
                 synchronized (fdLock) {
                     if (closePending) {
                         throw new SocketException ("Socket closed");
                     }
                 }
-                // If we have a ref. to the Socket, then sets the flags
-                // created, bound & connected to true.
-                // This is normally done in Socket.connect() but some
-                // subclasses of Socket may call impl.connect() directly!
+                // 如果有一个指向socket的引用，然后便将 created, bound和connected设置为true
+                // 这通常在 Socket#connect() 中完成，但 Socket 的一些子类可能会直接调用
+                // impl#connect()。
                 if (socket != null) {
                     socket.setBound();
                     socket.setConnected();
                 }
             } finally {
+                // 释放
                 releaseFD();
             }
         } catch (IOException e) {
@@ -595,11 +659,9 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         close();
     }
 
-    /*
-     * "Acquires" and returns the FileDescriptor for this impl
-     *
-     * A corresponding releaseFD is required to "release" the
-     * FileDescriptor.
+    /**
+     * 申请并返回用于该实现的文件描述符
+     * @return 需要相应的 releaseFD 来释放文件描述符
      */
     FileDescriptor acquireFD() {
         synchronized (fdLock) {
@@ -608,10 +670,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
     }
 
-    /*
-     * "Release" the FileDescriptor for this impl.
+    /**
+     * 释放此实现的文件描述符，
      *
-     * If the use count goes to -1 then the socket is closed.
+     * 如果使用总数变为-1，此socket已被关闭。
      */
     void releaseFD() {
         synchronized (fdLock) {
@@ -629,24 +691,36 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
     }
 
+    /**
+     * @return 检查连接是否重置
+     */
     public boolean isConnectionReset() {
         synchronized (resetLock) {
             return (resetState == CONNECTION_RESET);
         }
     }
 
+    /**
+     * @return 检查连接是否重置待处理
+     */
     public boolean isConnectionResetPending() {
         synchronized (resetLock) {
             return (resetState == CONNECTION_RESET_PENDING);
         }
     }
 
+    /**
+     * 设置连接为已重置
+     */
     public void setConnectionReset() {
         synchronized (resetLock) {
             resetState = CONNECTION_RESET;
         }
     }
 
+    /**
+     * 设置连接为重置待处理
+     */
     public void setConnectionResetPending() {
         synchronized (resetLock) {
             if (resetState == CONNECTION_NOT_RESET) {
@@ -656,14 +730,11 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
 
     }
 
-    /*
-     * Return true if already closed or close is pending
+    /**
+     * @return 如果已关闭或者关闭待定，则返回 true
      */
     public boolean isClosedOrPending() {
-        /*
-         * Lock on fdLock to ensure that we wait if a
-         * close is in progress.
-         */
+        // 对fdLock加锁以确保我们在关闭过程中等待
         synchronized (fdLock) {
             if (closePending || (fd == null)) {
                 return true;
@@ -673,48 +744,53 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
     }
 
-    /*
-     * Return the current value of SO_TIMEOUT
+    /**
+     * @return SO_IIMEOUT的当前值
      */
     public int getTimeout() {
         return timeout;
     }
 
-    /*
-     * "Pre-close" a socket by dup'ing the file descriptor - this enables
-     * the socket to be closed without releasing the file descriptor.
+    /**
+     * 通过复制文件描述符来预关闭socket，这使得可以在不释放文件描述符的情况下
+     * 关闭socket。
+     *
+     * @throws IOException 预关闭时发生异常
      */
     private void socketPreClose() throws IOException {
         socketClose0(true);
     }
 
-    /*
-     * Close the socket (and release the file descriptor).
+    /**
+     * 关闭此socker，并释放文件描述符
+     *
+     * @throws IOException 关闭时发生错误
      */
     protected void socketClose() throws IOException {
         socketClose0(false);
     }
 
     abstract void socketCreate(boolean isServer) throws IOException;
-    abstract void socketConnect(InetAddress address, int port, int timeout)
-        throws IOException;
-    abstract void socketBind(InetAddress address, int port)
-        throws IOException;
-    abstract void socketListen(int count)
-        throws IOException;
-    abstract void socketAccept(SocketImpl s)
-        throws IOException;
-    abstract int socketAvailable()
-        throws IOException;
-    abstract void socketClose0(boolean useDeferredClose)
-        throws IOException;
-    abstract void socketShutdown(int howto)
-        throws IOException;
-    abstract void socketSetOption(int cmd, boolean on, Object value)
-        throws SocketException;
+
+    abstract void socketConnect(InetAddress address, int port, int timeout) throws IOException;
+
+    abstract void socketBind(InetAddress address, int port) throws IOException;
+
+    abstract void socketListen(int count) throws IOException;
+
+    abstract void socketAccept(SocketImpl s) throws IOException;
+
+    abstract int socketAvailable() throws IOException;
+
+    abstract void socketClose0(boolean useDeferredClose) throws IOException;
+
+    abstract void socketShutdown(int howto) throws IOException;
+
+    abstract void socketSetOption(int cmd, boolean on, Object value) throws SocketException;
+
     abstract int socketGetOption(int opt, Object iaContainerObj) throws SocketException;
-    abstract void socketSendUrgentData(int data)
-        throws IOException;
+
+    abstract void socketSendUrgentData(int data) throws IOException;
 
     public final static int SHUT_RD = 0;
     public final static int SHUT_WR = 1;

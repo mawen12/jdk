@@ -26,23 +26,21 @@
 package java.net;
 
 import java.lang.annotation.Native;
+import java.net.Socket;
+import java.net.Socket;
 
 /**
- * Interface of methods to get/set socket options.  This interface is
- * implemented by: <B>SocketImpl</B> and  <B>DatagramSocketImpl</B>.
- * Subclasses of these should override the methods
- * of this interface in order to support their own options.
- * <P>
- * The methods and constants which specify options in this interface are
- * for implementation only.  If you're not subclassing SocketImpl or
- * DatagramSocketImpl, <B>you won't use these directly.</B> There are
- * type-safe methods to get/set each of these options in Socket, ServerSocket,
- * DatagramSocket and MulticastSocket.
- * <P>
+ * 提供设置/获取socket选项方法的接口。该接口被{@link java.net.SocketImpl}和
+ * {@link java.net.DatagramSocketImpl}所实现。上述两个的子类应该覆盖该接口的
+ * 方法以支持它们自己的选项。
+ *
+ * <p>该接口中的指定选项的方法和常量仅用于实现类。如果你不想实现上述子类，则无需直接
+ * 调用这些方法。在{@link java.net.Socket}、{@link java.net.ServerSocket}、
+ * {@link java.net.DatagramSocket}和{@link java.net.MulticastSocket}中，
+ * 设置或取消这些选项的方法都是类型安全的。
+ *
  * @author David Brown
  */
-
-
 public interface SocketOptions {
 
     /**
@@ -125,15 +123,13 @@ public interface SocketOptions {
     public Object getOption(int optID) throws SocketException;
 
     /**
-     * The java-supported BSD-style options.
+     * 由Java支持的BSD风格的选项
      */
 
     /**
-     * Disable Nagle's algorithm for this connection.  Written data
-     * to the network is not buffered pending acknowledgement of
-     * previously written data.
-     *<P>
-     * Valid for TCP only: SocketImpl.
+     * 对连接禁用 Nagle 算法。写入网络的数据不会被缓冲，等待先前写入的数据的确认。
+     *
+     * <p>仅适用于TCP {@link java.net.SocketImpl}
      *
      * @see Socket#setTcpNoDelay
      * @see Socket#getTcpNoDelay
@@ -142,19 +138,16 @@ public interface SocketOptions {
     @Native public final static int TCP_NODELAY = 0x0001;
 
     /**
-     * Fetch the local address binding of a socket (this option cannot
-     * be "set" only "gotten", since sockets are bound at creation time,
-     * and so the locally bound address cannot be changed).  The default local
-     * address of a socket is INADDR_ANY, meaning any local address on a
-     * multi-homed host.  A multi-homed host can use this option to accept
-     * connections to only one of its addresses (in the case of a
-     * ServerSocket or DatagramSocket), or to specify its return address
-     * to the peer (for a Socket or DatagramSocket).  The parameter of
-     * this option is an InetAddress.
-     * <P>
-     * This option <B>must</B> be specified in the constructor.
-     * <P>
-     * Valid for: SocketImpl, DatagramSocketImpl
+     * 获取绑定到socket的本地地址（该选项不能被设置，只能被获取，因为socket是在被
+     * 创建时绑定到地址上的，因此本地绑定地址不能被修改）。socket的默认本地地址是
+     * INADDR_ANY，表示多宿主机上的任何本地地址。多宿主机可以使用该选项来仅接受
+     * 其中一个地址的连接（对于 ServerSocket和DatagramSocket而言），或者向
+     * 对等端指定其返回地址（对于socket或DatagramSocket而言）。此选项的参数
+     * 是{@link java.net.InetAddress}。
+     *
+     * <p>该选项必须指定在构造器中。
+     *
+     * <p>适用于{@link java.net.SocketImpl}和{@link java.net.DatagramSocketImpl}
      *
      * @see Socket#getLocalAddress
      * @see DatagramSocket#getLocalAddress
@@ -162,43 +155,39 @@ public interface SocketOptions {
 
     @Native public final static int SO_BINDADDR = 0x000F;
 
-    /** Sets SO_REUSEADDR for a socket.  This is used only for MulticastSockets
-     * in java, and it is set by default for MulticastSockets.
-     * <P>
-     * Valid for: DatagramSocketImpl
+    /**
+     * 为socket设置 SO_REUSEADDR。仅能在Java中的{@link java.net.MulticastSocket}中使用，
+     * 并且它是{@link java.net.MulticastSocket}的默认设置。
+     *
+     * <p>适用于 {@link java.net.DatagramSocketImpl}
      */
-
     @Native public final static int SO_REUSEADDR = 0x04;
 
     /**
-     * Sets SO_BROADCAST for a socket. This option enables and disables
-     * the ability of the process to send broadcast messages. It is supported
-     * for only datagram sockets and only on networks that support
-     * the concept of a broadcast message (e.g. Ethernet, token ring, etc.),
-     * and it is set by default for DatagramSockets.
-     * @since 1.4
+     * 为socket设置BOARDCAST，该选项开启或禁用发送广播消息的能力。仅支持datagram socket，
+     * 并且仅支持广播消息概念的网络（比如以太网、令牌）等，并且他是{@link java.net.DatagramSocket}
+     * 的默认设置。
      */
-
     @Native public final static int SO_BROADCAST = 0x0020;
 
-    /** Set which outgoing interface on which to send multicast packets.
-     * Useful on hosts with multiple network interfaces, where applications
-     * want to use other than the system default.  Takes/returns an InetAddress.
-     * <P>
-     * Valid for Multicast: DatagramSocketImpl
+
+    /**
+     * 设置发送多播数据库包的传出接口。在具有多个网络的主机上很有用。
+     * 应用程序希望使用除系统默认接口之外的其他接口，获取/返回 InetAddress。
+     *
+     * <p>适用于多播：{@link java.net.DatagramSocketImpl}
      *
      * @see MulticastSocket#setInterface(InetAddress)
      * @see MulticastSocket#getInterface()
      */
-
     @Native public final static int IP_MULTICAST_IF = 0x10;
 
-    /** Same as above. This option is introduced so that the behaviour
-     *  with IP_MULTICAST_IF will be kept the same as before, while
-     *  this new option can support setting outgoing interfaces with either
-     *  IPv4 and IPv6 addresses.
+    /**
+     * 与上一个相同，引用此选项为了使 IP_MULTICAST_IF 的行为保持与以前相同，
+     * 同时此新选项可以支持IPv4和IPv6地址设置传出接口。
      *
-     *  NOTE: make sure there is no conflict with this
+     * <p>请注意：确保没有与此冲突
+     *
      * @see MulticastSocket#setNetworkInterface(NetworkInterface)
      * @see MulticastSocket#getNetworkInterface()
      * @since 1.4
@@ -206,53 +195,49 @@ public interface SocketOptions {
     @Native public final static int IP_MULTICAST_IF2 = 0x1f;
 
     /**
-     * This option enables or disables local loopback of multicast datagrams.
-     * This option is enabled by default for Multicast Sockets.
+     * 该选项开启或禁用多播数据包的本地回环。
+     *
+     * <p>该选项默认被多播socket启用。
+     *
      * @since 1.4
      */
-
     @Native public final static int IP_MULTICAST_LOOP = 0x12;
 
     /**
-     * This option sets the type-of-service or traffic class field
-     * in the IP header for a TCP or UDP socket.
+     * 该选项设置TCP或UDP socket的IP标头中的服务类型或流量类别字段。
+     *
      * @since 1.4
      */
-
     @Native public final static int IP_TOS = 0x3;
 
     /**
-     * Specify a linger-on-close timeout.  This option disables/enables
-     * immediate return from a <B>close()</B> of a TCP Socket.  Enabling
-     * this option with a non-zero Integer <I>timeout</I> means that a
-     * <B>close()</B> will block pending the transmission and acknowledgement
-     * of all data written to the peer, at which point the socket is closed
-     * <I>gracefully</I>.  Upon reaching the linger timeout, the socket is
-     * closed <I>forcefully</I>, with a TCP RST. Enabling the option with a
-     * timeout of zero does a forceful close immediately. If the specified
-     * timeout value exceeds 65,535 it will be reduced to 65,535.
-     * <P>
-     * Valid only for TCP: SocketImpl
+     * 指定关闭时停留的超时时间。该选项禁用/开启从TCP{@link java.net.Socket#close()}
+     * 立即返回。使用非零整数{@code timeout}开启该选项意味着{@link java.net.Socket#close()}
+     * 将会阻塞，等待传输和确认所有写入对等端的数据，此时socket将正常关闭。一旦到达超时时间，
+     * socket将会被强制关闭，并发出 TCP RST。使用零开启该选项意味着立即强制关闭。
+     * 如果特定超时值超过了65535，其会被减少到65535。
+     *
+     * <p>仅适用于TCP {@link java.net.SocketImpl}
      *
      * @see Socket#setSoLinger
      * @see Socket#getSoLinger
      */
     @Native public final static int SO_LINGER = 0x0080;
 
-    /** Set a timeout on blocking Socket operations:
-     * <PRE>
-     * ServerSocket.accept();
-     * SocketInputStream.read();
-     * DatagramSocket.receive();
-     * </PRE>
+    /**
+     * 为阻塞socket操作设置超时时间。
      *
-     * <P> The option must be set prior to entering a blocking
-     * operation to take effect.  If the timeout expires and the
-     * operation would continue to block,
-     * <B>java.io.InterruptedIOException</B> is raised.  The Socket is
-     * not closed in this case.
+     * <pre>{@code
+     *  ServerSocket.accept();
+     *  SocketInputStream.read();
+     *  DatagramSocket.receive();
+     * }</pre>
      *
-     * <P> Valid for all sockets: SocketImpl, DatagramSocketImpl
+     * <p>必须在进入阻塞操作之前设置该选项才能生效，如果超时且操作继续阻塞，
+     * 则返回引发{@link java.io.InterruptedIOException}。在这种情况下，
+     * socket不会关闭。
+     *
+     * <p>适用于所有socket：{@link java.net.SocketImpl}，{@link java.net.DatagramSocketImpl}
      *
      * @see Socket#setSoTimeout
      * @see ServerSocket#setSoTimeout
@@ -261,14 +246,12 @@ public interface SocketOptions {
     @Native public final static int SO_TIMEOUT = 0x1006;
 
     /**
-     * Set a hint the size of the underlying buffers used by the
-     * platform for outgoing network I/O. When used in set, this is a
-     * suggestion to the kernel from the application about the size of
-     * buffers to use for the data to be sent over the socket. When
-     * used in get, this must return the size of the buffer actually
-     * used by the platform when sending out data on this socket.
+     * 设置平台用于传出网络I/O的底层缓存区大小的提示。在set中使用时，
+     * 这是应用程序向内核提出的有关通过socket发送数据时使用的缓冲区
+     * 大小的建议。在get中使用时，必须返回平台在此socket上发送数据
+     * 时实际使用的缓冲区大小。
      *
-     * Valid for all sockets: SocketImpl, DatagramSocketImpl
+     * <p>适用于所有socket：{@link java.net.SocketImpl}，{@link java.net.DatagramSocketImpl}
      *
      * @see Socket#setSendBufferSize
      * @see Socket#getSendBufferSize
@@ -278,15 +261,12 @@ public interface SocketOptions {
     @Native public final static int SO_SNDBUF = 0x1001;
 
     /**
-     * Set a hint the size of the underlying buffers used by the
-     * platform for incoming network I/O. When used in set, this is a
-     * suggestion to the kernel from the application about the size of
-     * buffers to use for the data to be received over the
-     * socket. When used in get, this must return the size of the
-     * buffer actually used by the platform when receiving in data on
-     * this socket.
+     * 设置平台用于传入网络I/O的底层缓冲区大小的提示。在set中使用时，
+     * 这是应用程序向内核提出的有关通过socket接受数据时使用的缓冲区
+     * 大小的建议。在get中使用时，必须返回平台在此sockt上接受数据
+     * 时实际使用的缓冲区大小。
      *
-     * Valid for all sockets: SocketImpl, DatagramSocketImpl
+     * <p>适用于所有socket：{@link java.net.SocketImpl}，{@link java.net.DatagramSocketImpl}
      *
      * @see Socket#setReceiveBufferSize
      * @see Socket#getReceiveBufferSize
@@ -295,6 +275,16 @@ public interface SocketOptions {
      */
     @Native public final static int SO_RCVBUF = 0x1002;
 
+    /**
+     * 当TCP socket设置了keepalive选项，并且2小时内socket上没有双向交换任何数据时
+     * （注意：实际值取决于实现），TCP会自动向对等方发送 keepalive 探测。此探测是一个
+     * TCP端，对等方必须对其作出响应。
+     *
+     * <p>预期的响应有以下三种：
+     * <ol>
+     *     <li></li>
+     * </ol>
+     */
     /**
      * When the keepalive option is set for a TCP socket and no data
      * has been exchanged across the socket in either direction for
@@ -319,10 +309,9 @@ public interface SocketOptions {
     @Native public final static int SO_KEEPALIVE = 0x0008;
 
     /**
-     * When the OOBINLINE option is set, any TCP urgent data received on
-     * the socket will be received through the socket input stream.
-     * When the option is disabled (which is the default) urgent data
-     * is silently discarded.
+     * 当设置了 OOBINLINE 选项，socket上接收的任何TCP紧急数据都将通过
+     * socket输入流接收。
+     * 当禁用该选项（默认）紧急数据会被静默忽略。
      *
      * @see Socket#setOOBInline
      * @see Socket#getOOBInline

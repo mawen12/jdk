@@ -35,21 +35,39 @@ import sun.net.www.ParseUtil;
 /* import org.ietf.jgss.*; */
 
 /**
- * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
- * This is a subclass of PlainSocketImpl.
- * Note this class should <b>NOT</b> be public.
+ * SOCKS (V4 和 V5) TCP socket 实现 （RFC 1928）。
+ *
+ * <p>这是{@link java.net.PlainSocketImpl}的子类
+ *
+ * <p>请注意，此类不应该是{@code public}
  */
-
 class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
+    /**
+     * 服务端IP
+     */
     private String server = null;
+    /**
+     * 服务端端口，默认端口：1080
+     */
     private int serverPort = DEFAULT_PORT;
+    /**
+     *
+     */
     private InetSocketAddress external_address;
     private boolean useV4 = false;
     private Socket cmdsock = null;
+    /**
+     * 输入流
+     */
     private InputStream cmdIn = null;
+    /**
+     * 输出流
+     */
     private OutputStream cmdOut = null;
-    /* true if the Proxy has been set programatically */
-    private boolean applicationSetProxy;  /* false */
+    /**
+     * 如果代理已通过编程设置，则为true
+     */
+    private boolean applicationSetProxy;
 
 
     SocksSocketImpl() {
@@ -65,7 +83,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
         SocketAddress a = proxy.address();
         if (a instanceof InetSocketAddress) {
             InetSocketAddress ad = (InetSocketAddress) a;
-            // Use getHostString() to avoid reverse lookups
+            // 使用 getHostString() 避免反向查找
             server = ad.getHostString();
             serverPort = ad.getPort();
         }

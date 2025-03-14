@@ -25,6 +25,7 @@
 
 package java.net;
 
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
@@ -47,11 +48,10 @@ import sun.net.util.IPAddressUtil;
 import sun.net.spi.nameservice.*;
 
 /**
- * This class represents an Internet Protocol (IP) address.
+ * 该类代表网络协议(Internet Protocol)地址。
  *
- * <p> An IP address is either a 32-bit or 128-bit unsigned number
- * used by IP, a lower-level protocol on which protocols like UDP and
- * TCP are built. The IP address architecture is defined by <a
+ * <p>IP地址是IP使用的32位或128位无符号数，IP是构建UDP和TCP等协议
+ * 的低级协议。IP地址架构由<a
  * href="http://www.ietf.org/rfc/rfc790.txt"><i>RFC&nbsp;790:
  * Assigned Numbers</i></a>, <a
  * href="http://www.ietf.org/rfc/rfc1918.txt"> <i>RFC&nbsp;1918:
@@ -59,123 +59,89 @@ import sun.net.spi.nameservice.*;
  * href="http://www.ietf.org/rfc/rfc2365.txt"><i>RFC&nbsp;2365:
  * Administratively Scoped IP Multicast</i></a>, and <a
  * href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IP
- * Version 6 Addressing Architecture</i></a>. An instance of an
- * InetAddress consists of an IP address and possibly its
- * corresponding host name (depending on whether it is constructed
- * with a host name or whether it has already done reverse host name
- * resolution).
+ * Version 6 Addressing Architecture</i></a>所定义。
  *
- * <h3> Address types </h3>
+ * <p>InetAddress的实例由一个IP地址和可能其对应的主机名组成（取决于它是否用
+ * 主机名构造或者是否已经完成反向主机名解析）。
  *
- * <blockquote><table cellspacing=2 summary="Description of unicast and multicast address types">
- *   <tr><th valign=top><i>unicast</i></th>
- *       <td>An identifier for a single interface. A packet sent to
- *         a unicast address is delivered to the interface identified by
- *         that address.
+ * <h3>地址类型</h3>
  *
- *         <p> The Unspecified Address -- Also called anylocal or wildcard
- *         address. It must never be assigned to any node. It indicates the
- *         absence of an address. One example of its use is as the target of
- *         bind, which allows a server to accept a client connection on any
- *         interface, in case the server host has multiple interfaces.
+ * <blockquote><table cellspacing=2 summary="单播和多播地址类型描述"></blockquote>
+ * <tr><th valign=top><i>单播</i></th>
+ *  <td>单个接口的标识符。发送到单播地址的数据包将被传送到该地址标识的接口。
  *
- *         <p> The <i>unspecified</i> address must not be used as
- *         the destination address of an IP packet.
+ *  <p>未指定地址 -- 也被称作任意本地地址或通配符地址。据不能将其分配给任何地址。
+ *  它表示没有地址，其用途的一个示例是作为绑定的目标，如果服务器主机有多个接口，
+ *  它允许服务器在任何接口上接受客户端连接。
  *
- *         <p> The <i>Loopback</i> Addresses -- This is the address
- *         assigned to the loopback interface. Anything sent to this
- *         IP address loops around and becomes IP input on the local
- *         host. This address is often used when testing a
- *         client.</td></tr>
- *   <tr><th valign=top><i>multicast</i></th>
- *       <td>An identifier for a set of interfaces (typically belonging
- *         to different nodes). A packet sent to a multicast address is
- *         delivered to all interfaces identified by that address.</td></tr>
- * </table></blockquote>
+ *  <p>未指定地址不能用作IP数据包的目标地址。
  *
- * <h4> IP address scope </h4>
+ *  <p>回环(Loopback)地址 -- 这是分配给 loopback 接口的地址。发送到此IP地址的
+ *  任何内容都会循环并成为本地主机上的IP输入。此地址通常在测试客户端时使用。
+ *  </td></tr>
  *
- * <p> <i>Link-local</i> addresses are designed to be used for addressing
- * on a single link for purposes such as auto-address configuration,
- * neighbor discovery, or when no routers are present.
+ * <tr><th valign=top><i>多播</i></th>
+ *  <td>一组接口的标识符（通常属于不同的节点）。发送到多播地址的数据包将传送到该地址标识
+ *  的所有接口</td>
  *
- * <p> <i>Site-local</i> addresses are designed to be used for addressing
- * inside of a site without the need for a global prefix.
+ * <h4>IP地址范围</h4>
  *
- * <p> <i>Global</i> addresses are unique across the internet.
+ * <p>{@code Link-local}地址旨在用于单个链路上的寻址，以实现自动地址配置、邻居发现，
+ * 或不存在路由器等目的。
  *
- * <h4> Textual representation of IP addresses </h4>
+ * <p>{@code Site-local}地址旨在用于站点内部寻址，无需全局前缀。
  *
- * The textual representation of an IP address is address family specific.
+ * <p>{@code Global}地址在互联网上是唯一的。
  *
- * <p>
+ * <h4>IP地址的文本标识</h4>
  *
- * For IPv4 address format, please refer to <A
- * HREF="Inet4Address.html#format">Inet4Address#format</A>; For IPv6
- * address format, please refer to <A
- * HREF="Inet6Address.html#format">Inet6Address#format</A>.
+ * <p>IP地址的文本标识是特定于地址系列的。
  *
- * <P>There is a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
- * System Properties</a> affecting how IPv4 and IPv6 addresses are used.</P>
+ * <p>对于IPv4地址格式，请参阅<a href="Inet4Address.html#format">Inet4Address#format</a>;
+ * 对于IPv6地址格式，请参阅<a href="Inet6Address.html#format">Inet6Address#format</a>
  *
- * <h4> Host Name Resolution </h4>
+ * <p>此处列举出<a href="doc-files/net-properties.html#Ipv4IPv6">几个系统属性</a>
+ * 会影响IPv4和IPv6地址的使用方式。
  *
- * Host name-to-IP address <i>resolution</i> is accomplished through
- * the use of a combination of local machine configuration information
- * and network naming services such as the Domain Name System (DNS)
- * and Network Information Service(NIS). The particular naming
- * services(s) being used is by default the local machine configured
- * one. For any host name, its corresponding IP address is returned.
+ * <h4>主机名解析</h4>
  *
- * <p> <i>Reverse name resolution</i> means that for any IP address,
- * the host associated with the IP address is returned.
+ * 主机名到IP的解析是通过结合使用本地计算机配置信息和网络命令服务（如域名系统（DNS）
+ * 和网络信息服务（NIS））来实现的。所使用的特定命名服务默认为本地计算机所配置的命令服务。
+ * 对于任何主机名，都会返回其对应的IP地址。
  *
- * <p> The InetAddress class provides methods to resolve host names to
- * their IP addresses and vice versa.
+ * <p>反向名称解析，表示对于任何IP地址，返回与IP地址关联的主机。
  *
- * <h4> InetAddress Caching </h4>
+ * <p>{@link InetAddress}类提供将主机名解析为IP地址的方法，反之亦然。
  *
- * The InetAddress class has a cache to store successful as well as
- * unsuccessful host name resolutions.
+ * <h4>InetAddress缓存</h4>
  *
- * <p> By default, when a security manager is installed, in order to
- * protect against DNS spoofing attacks,
- * the result of positive host name resolutions are
- * cached forever. When a security manager is not installed, the default
- * behavior is to cache entries for a finite (implementation dependent)
- * period of time. The result of unsuccessful host
- * name resolution is cached for a very short period of time (10
- * seconds) to improve performance.
+ * {@code InetAddress}类有一个缓存来存储成功和不成功的主机名解析。
  *
- * <p> If the default behavior is not desired, then a Java security property
- * can be set to a different Time-to-live (TTL) value for positive
- * caching. Likewise, a system admin can configure a different
- * negative caching TTL value when needed.
+ * <p>默认情况下，安装安全管理器后，为了防止DNS欺骗攻击，主机名正确解析的结果将被永久缓存。
+ * 当未安装安全管理器时，默认行为是在有限的（依赖于实现的）时间段内缓存条目。主机名解析失败
+ * 的结果会被缓存很短的时间（10秒），以提升性能。
  *
- * <p> Two Java security properties control the TTL values used for
- *  positive and negative host name resolution caching:
+ * <p>如果不希望使用默认行为，则可以将Java安全属性设置为不同的生成时间（TTL）值以进行正向
+ * 缓存。同样，系统管理员可以在需要时配置不同的负向缓存TTL值。
+ *
+ * <p>两个Java安全属性空值用于正向和负向主机名解析缓存的TTL值。
  *
  * <blockquote>
  * <dl>
- * <dt><b>networkaddress.cache.ttl</b></dt>
- * <dd>Indicates the caching policy for successful name lookups from
- * the name service. The value is specified as as integer to indicate
- * the number of seconds to cache the successful lookup. The default
- * setting is to cache for an implementation specific period of time.
- * <p>
- * A value of -1 indicates "cache forever".
- * </dd>
- * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
- * <dd>Indicates the caching policy for un-successful name lookups
- * from the name service. The value is specified as as integer to
- * indicate the number of seconds to cache the failure for
- * un-successful lookups.
- * <p>
- * A value of 0 indicates "never cache".
- * A value of -1 indicates "cache forever".
- * </dd>
- * </dl>
- * </blockquote>
+ *  <dt><b>networkaddress.cache.ttl</b></dt>
+ *  <dd>表示从名称服务成功查找名称的缓存策略。该值指定为整数，表示缓存成功查找的秒数。
+ *  默认设置是缓存一段特定的时间。
+ *
+ *      <p>-1值表示永久缓存。
+ *  </dd>
+ *  <dt><b>networkaddress.cache.negative.ttl</b>(默认：10)</dt>
+ *  <dd>表示名称服务中未成功名称查找的缓存策略。该值指定为整数，表示缓存未成功查找失败的秒数
+ *
+ *      <p>值为0表示永不缓存
+ *      值为-1表示永远缓存
+ *  </dd>
+ *  </dl>
+ *  </blockquote>
  *
  * @author  Chris Warth
  * @see     java.net.InetAddress#getByAddress(byte[])
@@ -185,21 +151,24 @@ import sun.net.spi.nameservice.*;
  * @see     java.net.InetAddress#getLocalHost()
  * @since JDK1.0
  */
-public
-class InetAddress implements java.io.Serializable {
+public class InetAddress implements java.io.Serializable {
     /**
-     * Specify the address family: Internet Protocol, Version 4
+     * 指定地址系列：网络协议，版本 4
+     *
      * @since 1.4
      */
     static final int IPv4 = 1;
 
     /**
-     * Specify the address family: Internet Protocol, Version 6
+     * 指定地址系列：网络协议，版本 6
+     *
      * @since 1.4
      */
     static final int IPv6 = 2;
 
-    /* Specify address family preference */
+    /**
+     * 指定地址系列首选项
+     */
     static transient boolean preferIPv6Address = false;
 
     static class InetAddressHolder {
@@ -226,7 +195,7 @@ class InetAddress implements java.io.Serializable {
         }
 
         /**
-         * Holds a 32-bit IPv4 address.
+         * 持有32位IPv4地址
          */
         int address;
 
@@ -235,8 +204,7 @@ class InetAddress implements java.io.Serializable {
         }
 
         /**
-         * Specifies the address family type, for instance, '1' for IPv4
-         * addresses, and '2' for IPv6 addresses.
+         * 指定地址系列类型，例如：IPv4地址为1，IPv6地址为2
          */
         int family;
 
@@ -245,24 +213,32 @@ class InetAddress implements java.io.Serializable {
         }
     }
 
-    /* Used to store the serializable fields of InetAddress */
+    /**
+     * 用于存储InetAddress的可序列化字段
+     */
     final transient InetAddressHolder holder;
 
     InetAddressHolder holder() {
         return holder;
     }
 
-    /* Used to store the name service provider */
+    /**
+     * 用于存储名称服务提供者
+     */
     private static List<NameService> nameServices = null;
 
-    /* Used to store the best available hostname */
+    /**
+     * 用于存储最佳可用主机名
+     */
     private transient String canonicalHostName = null;
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    /**
+     * 从 JDK 1.0.2 开始使用serialVersionUID实现互操作性
+     */
     private static final long serialVersionUID = 3286316764910316507L;
 
     /*
-     * Load net library into runtime, and perform initializations.
+     * 将网络库加载到运行时，并执行初始化
      */
     static {
         preferIPv6Address = java.security.AccessController.doPrivileged(
@@ -278,33 +254,31 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Constructor for the Socket.accept() method.
-     * This creates an empty InetAddress, which is filled in by
-     * the accept() method.  This InetAddress, however, is not
-     * put in the address cache, since it is not created by name.
+     * {@link java.net.Socket#accept()}方法的构造函数。
+     * 这将创建一个空的InetAddress，由{@link java.net.Socket#accept()}
+     * 方法填充。但是，这个InetAddress不会放入地址缓存中，
+     * 因为它不是通过名称创建的。
      */
     InetAddress() {
         holder = new InetAddressHolder();
     }
 
     /**
-     * Replaces the de-serialized object with an Inet4Address object.
+     * 使用Inet4Address对象替换反序列化对象
      *
-     * @return the alternate object to the de-serialized object.
+     * @return 反系列化对象的替代对象
      *
-     * @throws ObjectStreamException if a new object replacing this
-     * object could not be created
+     * @throws ObjectStreamException 如果无法创建替换此对象的新对象
      */
     private Object readResolve() throws ObjectStreamException {
-        // will replace the deserialized 'this' object
+        // 将替换反序列化的'this'对象
         return new Inet4Address(holder().getHostName(), holder().getAddress());
     }
 
     /**
-     * Utility routine to check if the InetAddress is an
-     * IP multicast address.
-     * @return a {@code boolean} indicating if the InetAddress is
-     * an IP multicast address
+     * 用于检查InetAddress是否为IP多播地址的实用程序
+     *
+     * @return {@code false} 单播地址
      * @since   JDK1.1
      */
     public boolean isMulticastAddress() {
@@ -312,9 +286,10 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the InetAddress in a wildcard address.
-     * @return a {@code boolean} indicating if the Inetaddress is
-     *         a wildcard address.
+     * 用于检查InetAddress是否为通配符地址的实用程序。
+     *
+     *
+     * @return {@code false} 非通配符地址
      * @since 1.4
      */
     public boolean isAnyLocalAddress() {
@@ -322,10 +297,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the InetAddress is a loopback address.
+     * 用于检查InetAddress是否为回环地址的实用程序。
      *
-     * @return a {@code boolean} indicating if the InetAddress is
-     * a loopback address; or false otherwise.
+     * @return {@code false} 非回环地址
      * @since 1.4
      */
     public boolean isLoopbackAddress() {
@@ -333,10 +307,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the InetAddress is an link local address.
+     * 用于检查InetAddress是否为link local地址的实用程序
      *
-     * @return a {@code boolean} indicating if the InetAddress is
-     * a link local address; or false if address is not a link local unicast address.
+     * @return {@code false} 非link lock单播地址
      * @since 1.4
      */
     public boolean isLinkLocalAddress() {
@@ -344,10 +317,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the InetAddress is a site local address.
+     * 用于检查InetAddress是否为site local地址的实用程序
      *
-     * @return a {@code boolean} indicating if the InetAddress is
-     * a site local address; or false if address is not a site local unicast address.
+     * @return {@code false} 非site local单播地址
      * @since 1.4
      */
     public boolean isSiteLocalAddress() {
@@ -355,11 +327,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the multicast address has global scope.
+     * 用于检查多播地址是否具有global范围的实用程序
      *
-     * @return a {@code boolean} indicating if the address has
-     *         is a multicast address of global scope, false if it is not
-     *         of global scope or it is not a multicast address
+     * @return {@code false} 非多播地址，或非global范围
      * @since 1.4
      */
     public boolean isMCGlobal() {
@@ -367,11 +337,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the multicast address has node scope.
+     * 用于检查多播地址是否具有node范围的实用程序
      *
-     * @return a {@code boolean} indicating if the address has
-     *         is a multicast address of node-local scope, false if it is not
-     *         of node-local scope or it is not a multicast address
+     * @return {@code false} 非多播地址，或非node范围
      * @since 1.4
      */
     public boolean isMCNodeLocal() {
@@ -379,11 +347,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the multicast address has link scope.
+     * 用于检查多播地址是否具有link local范围的实用程序
      *
-     * @return a {@code boolean} indicating if the address has
-     *         is a multicast address of link-local scope, false if it is not
-     *         of link-local scope or it is not a multicast address
+     * @return {@code false} 非多播地址，或非link local范围
      * @since 1.4
      */
     public boolean isMCLinkLocal() {
@@ -391,11 +357,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the multicast address has site scope.
+     * 用于检查多播地址是否具有site-local范围的实用程序
      *
-     * @return a {@code boolean} indicating if the address has
-     *         is a multicast address of site-local scope, false if it is not
-     *         of site-local scope or it is not a multicast address
+     * @return a {@code false} 非多播地址，或非site-local范围
      * @since 1.4
      */
     public boolean isMCSiteLocal() {
@@ -403,12 +367,9 @@ class InetAddress implements java.io.Serializable {
     }
 
     /**
-     * Utility routine to check if the multicast address has organization scope.
+     * 用于检查多播地址是否具有organization-local范围的实用程序
      *
-     * @return a {@code boolean} indicating if the address has
-     *         is a multicast address of organization-local scope,
-     *         false if it is not of organization-local scope
-     *         or it is not a multicast address
+     * @return a {@code false} 非多播地址，或非organization-local范围
      * @since 1.4
      */
     public boolean isMCOrgLocal() {
@@ -417,6 +378,8 @@ class InetAddress implements java.io.Serializable {
 
 
     /**
+     * 测试地址是否可达。
+     *
      * Test whether that address is reachable. Best effort is made by the
      * implementation to try to reach the host, but firewalls and server
      * configuration may block requests resulting in a unreachable status

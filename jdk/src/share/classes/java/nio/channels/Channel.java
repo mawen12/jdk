@@ -30,23 +30,16 @@ import java.io.Closeable;
 
 
 /**
- * A nexus for I/O operations.
+ * I/O操作的纽带。
  *
- * <p> A channel represents an open connection to an entity such as a hardware
- * device, a file, a network socket, or a program component that is capable of
- * performing one or more distinct I/O operations, for example reading or
- * writing.
+ * <p>一个channel代表与实体的已打开的连接，例如硬件设备、文件、网络socket，或是能够执行
+ * 一个或多个不同的I/O操作的程序组件，例如读和写。
  *
- * <p> A channel is either open or closed.  A channel is open upon creation,
- * and once closed it remains closed.  Once a channel is closed, any attempt to
- * invoke an I/O operation upon it will cause a {@link ClosedChannelException}
- * to be thrown.  Whether or not a channel is open may be tested by invoking
- * its {@link #isOpen isOpen} method.
+ * <p>一个channel可以打开或关闭。一旦创建后便已打开，一旦关闭就是已关闭。一旦关闭后，任何
+ * 尝试调用其I/O操作都将导致抛出{@link java.nio.channels.ClosedChannelException}。
+ * 可以通过调用其{@link #isOpen()}方法来测试channel是否打开。
  *
- * <p> Channels are, in general, intended to be safe for multithreaded access
- * as described in the specifications of the interfaces and classes that extend
- * and implement this interface.
- *
+ * <p>一般而言，通道旨在保证多线程访问的安全，如扩展和实现此接口的接口和类的规范中所述。
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -56,28 +49,23 @@ import java.io.Closeable;
 public interface Channel extends Closeable {
 
     /**
-     * Tells whether or not this channel is open.
+     * 测试channel是否打开
      *
-     * @return <tt>true</tt> if, and only if, this channel is open
+     * @return true 代表已打开
      */
     public boolean isOpen();
 
     /**
-     * Closes this channel.
+     * 关闭该channel。
      *
-     * <p> After a channel is closed, any further attempt to invoke I/O
-     * operations upon it will cause a {@link ClosedChannelException} to be
-     * thrown.
+     * <p>在关闭后，任何尝试调用其I/O操作都会导致抛出{@link ClosedChannelException}异常。
      *
-     * <p> If this channel is already closed then invoking this method has no
-     * effect.
+     * <p>在关闭后，再次调用该方法不会产生任何异常。
      *
-     * <p> This method may be invoked at any time.  If some other thread has
-     * already invoked it, however, then another invocation will block until
-     * the first invocation is complete, after which it will return without
-     * effect. </p>
+     * <p>该方法可以在任何时候被调用。如果其他线程已经调用它了，但是另外一个线程也调用该方法时会阻塞，
+     * 直到第一个调用已完成，后续调用不会产生任何影响。
      *
-     * @throws  IOException  If an I/O error occurs
+     * @throws  IOException  如果发生I/O异常
      */
     public void close() throws IOException;
 

@@ -26,28 +26,26 @@
 package java.io;
 
 import java.io.IOException;
+import java.lang.AutoCloseable;
 
 /**
- * A {@code Closeable} is a source or destination of data that can be closed.
- * The close method is invoked to release resources that the object is
- * holding (such as open files).
+ * {@link Closeable}代表了数据的源或目标可以被关闭。
+ *
+ * <p>调用关闭方法可以释放对象持有的资源（例如打开的文件）。
  *
  * @since 1.5
  */
 public interface Closeable extends AutoCloseable {
 
     /**
-     * Closes this stream and releases any system resources associated
-     * with it. If the stream is already closed then invoking this
-     * method has no effect.
+     * 关闭流并释放与其关联的任何系统资源。如果流已经关闭，再次调用该方法不会产生
+     * 任何影响。
      *
-     * <p> As noted in {@link AutoCloseable#close()}, cases where the
-     * close may fail require careful attention. It is strongly advised
-     * to relinquish the underlying resources and to internally
-     * <em>mark</em> the {@code Closeable} as closed, prior to throwing
-     * the {@code IOException}.
+     * <p>正如{@link java.lang.AutoCloseable#close()}说明的，关闭可能失败
+     * 的情况需要特别注意。强烈建议在抛出{@link java.io.IOException}之前放弃
+     * 底层资源，并在内部将{@link Closeable}标记为已关闭。
      *
-     * @throws IOException if an I/O error occurs
+     * @throws IOException 如果发生一个I/O异常
      */
     public void close() throws IOException;
 }

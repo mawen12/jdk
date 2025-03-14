@@ -25,10 +25,12 @@
 
 package java.net;
 
+import java.net.Socket;
+
 /**
- * This class represents a proxy setting, typically a type (http, socks) and
- * a socket address.
- * A {@code Proxy} is an immutable object.
+ * 该类代表代理设置，通常是一种类型（http, socks）和一个socket地址。
+ *
+ * <p>一个{@link Proxy}是不可变对象。
  *
  * @see     java.net.ProxySelector
  * @author Yingxian Wang
@@ -38,21 +40,22 @@ package java.net;
 public class Proxy {
 
     /**
-     * Represents the proxy type.
+     * 代表代理类型
      *
      * @since 1.5
      */
     public enum Type {
         /**
-         * Represents a direct connection, or the absence of a proxy.
+         * 代表直接连接，或代理缺失
          */
         DIRECT,
         /**
          * Represents proxy for high level protocols such as HTTP or FTP.
+         * 代表高级协议（如：HTTP/FTP）的代理
          */
         HTTP,
         /**
-         * Represents a SOCKS (V4 or V5) proxy.
+         * 代表Socks（如：V4/V5）的代理
          */
         SOCKS
     };
@@ -61,34 +64,31 @@ public class Proxy {
     private SocketAddress sa;
 
     /**
-     * A proxy setting that represents a {@code DIRECT} connection,
-     * basically telling the protocol handler not to use any proxying.
-     * Used, for instance, to create sockets bypassing any other global
-     * proxy settings (like SOCKS):
-     * <P>
-     * {@code Socket s = new Socket(Proxy.NO_PROXY);}
+     * 代表{@link Type#DIRECT}连接的代理设置。
+     * 基本上告诉协议处理器不要使用任何代理。
+     * 例如：用于创建绕过任何其他全局代理设置（例如：Socks）。
      *
+     * <p>{@code Socket s = new Socket(Proxy.NO_PROXY);}
      */
     public final static Proxy NO_PROXY = new Proxy();
 
-    // Creates the proxy that represents a {@code DIRECT} connection.
+    /**
+     * 创建代表{@link Type#DIRECT}连接的代理
+     */
     private Proxy() {
         type = Type.DIRECT;
         sa = null;
     }
 
     /**
-     * Creates an entry representing a PROXY connection.
-     * Certain combinations are illegal. For instance, for types Http, and
-     * Socks, a SocketAddress <b>must</b> be provided.
-     * <P>
-     * Use the {@code Proxy.NO_PROXY} constant
-     * for representing a direct connection.
+     * 创建一个代表PROXY连接的条目。
+     * 某些组合是非法的，例如：对于HTTP和Socks类型，必须提供{@link java.net.SocketAddress}。
      *
-     * @param type the {@code Type} of the proxy
-     * @param sa the {@code SocketAddress} for that proxy
-     * @throws IllegalArgumentException when the type and the address are
-     * incompatible
+     * <p>使用常量{@link Proxy#NO_PROXY}代表直接连接。
+     *
+     * @param type 代理的类型
+     * @param sa 用于代理的Socket地址
+     * @throws IllegalArgumentException 当类型和地址不兼容时
      */
     public Proxy(Type type, SocketAddress sa) {
         if ((type == Type.DIRECT) || !(sa instanceof InetSocketAddress))
@@ -98,7 +98,7 @@ public class Proxy {
     }
 
     /**
-     * Returns the proxy type.
+     * 返回代理类型
      *
      * @return a Type representing the proxy type
      */
@@ -107,8 +107,7 @@ public class Proxy {
     }
 
     /**
-     * Returns the socket address of the proxy, or
-     * {@code null} if its a direct connection.
+     * 返回代理的socket地址，如果是直接连接，则为{@code null}
      *
      * @return a {@code SocketAddress} representing the socket end
      *         point of the proxy
@@ -118,10 +117,9 @@ public class Proxy {
     }
 
     /**
-     * Constructs a string representation of this Proxy.
-     * This String is constructed by calling toString() on its type
-     * and concatenating " @ " and the toString() result from its address
-     * if its type is not {@code DIRECT}.
+     * 构造代表代理的字符串表示。
+     * 通过调用代理类型的{@link Type#toString()}方法，然后拼接'@',
+     * 和其地址的{@link java.net.Socket#toString()}方法。
      *
      * @return  a string representation of this object.
      */
@@ -131,18 +129,17 @@ public class Proxy {
         return type() + " @ " + address();
     }
 
-        /**
-     * Compares this object against the specified object.
-     * The result is {@code true} if and only if the argument is
-     * not {@code null} and it represents the same proxy as
-     * this object.
-     * <p>
-     * Two instances of {@code Proxy} represent the same
-     * address if both the SocketAddresses and type are equal.
+    /**
+     * 将此对象与指定对象进行比较。
+     * 当且仅当参数不为{@code null}并且它代表与此对象相同的代理时，
+     * 结果才为{@code true}。
      *
-     * @param   obj   the object to compare against.
-     * @return  {@code true} if the objects are the same;
-     *          {@code false} otherwise.
+     * <p>
+     * 如果SocketAddress和类型相等，则{@link Proxy}的两个实例
+     * 代表相同的地址。
+     *
+     * @param   obj   要比较的对象
+     * @return  {@code true} 如果两个对象相等
      * @see java.net.InetSocketAddress#equals(java.lang.Object)
      */
     public final boolean equals(Object obj) {
@@ -159,7 +156,7 @@ public class Proxy {
     }
 
     /**
-     * Returns a hashcode for this Proxy.
+     * 返回该代理的哈希码
      *
      * @return  a hash code value for this Proxy.
      */

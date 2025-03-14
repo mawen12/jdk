@@ -25,139 +25,111 @@
 
 package java.nio.channels;
 
+import java.lang.Object;
+import java.lang.Object;
 import java.net.SocketOption;
 import java.net.SocketAddress;
 import java.util.Set;
 import java.io.IOException;
 
 /**
- * A channel to a network socket.
+ * 代表网络socket的channel。
  *
- * <p> A channel that implements this interface is a channel to a network
- * socket. The {@link #bind(SocketAddress) bind} method is used to bind the
- * socket to a local {@link SocketAddress address}, the {@link #getLocalAddress()
- * getLocalAddress} method returns the address that the socket is bound to, and
- * the {@link #setOption(SocketOption,Object) setOption} and {@link
- * #getOption(SocketOption) getOption} methods are used to set and query socket
- * options.  An implementation of this interface should specify the socket options
- * that it supports.
+ * <p>实现了该接口的channel代表是网络socket的channel。
+ * {@link #bind(SocketAddress)}方法被用于绑定socket到本地{@link java.net.SocketAddress}，
+ * {@link #getLocalAddress()}将返回socket绑定的地址。
+ * {@link #setOption(SocketOption, java.lang.Object)}用于设置socket选项。
+ * {@link #getOption(SocketOption)}用于获取socket选项。
+ * 该接口的实现应该指定其支持的socket选项。
  *
- * <p> The {@link #bind bind} and {@link #setOption setOption} methods that do
- * not otherwise have a value to return are specified to return the network
- * channel upon which they are invoked. This allows method invocations to be
- * chained. Implementations of this interface should specialize the return type
- * so that method invocations on the implementation class can be chained.
+ * <p>{@link #bind(SocketAddress)}和{@link #setOption(SocketOption, java.lang.Object)}
+ * 方法没有返回值，但是被指定返回调用它们的channel。这允许链式方法调用，此接口的实现
+ * 应该专门化返回类型，以便可以链接实现类上的方法调用。
  *
  * @since 1.7
  */
 
-public interface NetworkChannel
-    extends Channel
-{
+public interface NetworkChannel extends Channel {
     /**
-     * Binds the channel's socket to a local address.
+     * 将channel的socket绑定到本地地址。
      *
-     * <p> This method is used to establish an association between the socket and
-     * a local address. Once an association is established then the socket remains
-     * bound until the channel is closed. If the {@code local} parameter has the
-     * value {@code null} then the socket will be bound to an address that is
-     * assigned automatically.
+     * <p>该方法用于在socket和本地地址间建立联系。一旦建立好联系，socket便会保持绑定
+     * 直到channel被关闭。如果参数{@code local}为null，socket将被绑定到自动分配的地址。
      *
-     * @param   local
-     *          The address to bind the socket, or {@code null} to bind the socket
-     *          to an automatically assigned socket address
+     * @param   local 用于socket绑定的地址，如果为{@code null}，将会自动分配一个地址
+     *                给socket去绑定。
      *
      * @return  This channel
      *
-     * @throws  AlreadyBoundException
-     *          If the socket is already bound
-     * @throws  UnsupportedAddressTypeException
-     *          If the type of the given address is not supported
-     * @throws  ClosedChannelException
-     *          If the channel is closed
-     * @throws  IOException
-     *          If some other I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission. An implementation of this interface should specify
-     *          any required permissions.
+     * @throws  AlreadyBoundException 已经有socket绑定了。
+
+     * @throws  UnsupportedAddressTypeException 给定的地址类型不支持
+     *
+     * @throws  ClosedChannelException channel已经关闭
+     *
+     * @throws  IOException 如果发生某些I/O错误
+     *
+     * @throws  SecurityException 如果安装了安全管理器并且它拒绝未指定的权限。此接口的实现
+     *                            应该指定任何所需的权限。
      *
      * @see #getLocalAddress
      */
     NetworkChannel bind(SocketAddress local) throws IOException;
 
     /**
-     * Returns the socket address that this channel's socket is bound to.
+     * 返回channel中的socket绑定的本地地址。
      *
-     * <p> Where the channel is {@link #bind bound} to an Internet Protocol
-     * socket address then the return value from this method is of type {@link
-     * java.net.InetSocketAddress}.
+     * <p>当channel绑定到网络协议socket地址({@link java.net.InetSocketAddress})时，
+     * 此方法的返回值类型为{@link java.net.InetSocketAddress}。
      *
-     * @return  The socket address that the socket is bound to, or {@code null}
-     *          if the channel's socket is not bound
+     * @return  channel中的socket绑定的本地地址，如果未绑定，则返回{@code null}。
      *
-     * @throws  ClosedChannelException
-     *          If the channel is closed
-     * @throws  IOException
-     *          If an I/O error occurs
+     * @throws  ClosedChannelException 如果channel已关闭
+     *
+     * @throws  IOException 如果发生I/O异常
      */
     SocketAddress getLocalAddress() throws IOException;
 
     /**
-     * Sets the value of a socket option.
+     * 设置socket选项的值
      *
-     * @param   <T>
-     *          The type of the socket option value
-     * @param   name
-     *          The socket option
-     * @param   value
-     *          The value of the socket option. A value of {@code null} may be
-     *          a valid value for some socket options.
+     * @param   <T> socket选项值的类型
+     * @param   name socket选项名称
+     * @param   value socket选项的值，对于某些选项来说，{@code null}是可被接受的
      *
      * @return  This channel
      *
-     * @throws  UnsupportedOperationException
-     *          If the socket option is not supported by this channel
-     * @throws  IllegalArgumentException
-     *          If the value is not a valid value for this socket option
-     * @throws  ClosedChannelException
-     *          If this channel is closed
-     * @throws  IOException
-     *          If an I/O error occurs
+     * @throws  UnsupportedOperationException channel不支持该socket选项
+     * @throws  IllegalArgumentException 对于socket选项来说是非法值
+     * @throws  ClosedChannelException channel已关闭
+     * @throws  IOException 如果发生I/O异常
      *
      * @see java.net.StandardSocketOptions
      */
     <T> NetworkChannel setOption(SocketOption<T> name, T value) throws IOException;
 
     /**
-     * Returns the value of a socket option.
+     * 返回socket选项的值
      *
-     * @param   <T>
-     *          The type of the socket option value
-     * @param   name
-     *          The socket option
+     * @param   <T> socket选项值的类型
+     * @param   name socket选项
      *
-     * @return  The value of the socket option. A value of {@code null} may be
-     *          a valid value for some socket options.
+     * @return  value socket选项的值，对于某些选项来说，{@code null}是可被接受的
      *
-     * @throws  UnsupportedOperationException
-     *          If the socket option is not supported by this channel
-     * @throws  ClosedChannelException
-     *          If this channel is closed
-     * @throws  IOException
-     *          If an I/O error occurs
+     * @throws  UnsupportedOperationException channel不支持该socket选项
+     * @throws  ClosedChannelException channel已关闭
+     * @throws  IOException 如果发生I/O异常
      *
      * @see java.net.StandardSocketOptions
      */
     <T> T getOption(SocketOption<T> name) throws IOException;
 
     /**
-     * Returns a set of the socket options supported by this channel.
+     * 返回该channel支持的socket选项的集合。
      *
-     * <p> This method will continue to return the set of options even after the
-     * channel has been closed.
+     * <p>该方法不受channel关闭的影响，即使已经关闭了，也会返回选项集合
      *
-     * @return  A set of the socket options supported by this channel
+     * @return  该channel支持的socket选项的集合
      */
     Set<SocketOption<?>> supportedOptions();
 }

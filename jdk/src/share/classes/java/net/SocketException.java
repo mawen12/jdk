@@ -28,7 +28,7 @@ package java.net;
 import java.io.IOException;
 
 /**
- * Thrown to indicate that there is an error creating or accessing a Socket.
+ * 抛出该异常，表明在创建或访问一个socket时出现错误
  *
  * @author  Jonathan Payne
  * @since   JDK1.0
@@ -38,17 +38,16 @@ class SocketException extends IOException {
     private static final long serialVersionUID = -5935874303556886934L;
 
     /**
-     * Constructs a new {@code SocketException} with the
-     * specified detail message.
+     * 构造一个带有指定详细信息的{@link SocketException}
      *
-     * @param msg the detail message.
+     * @param msg 详细信息
      */
     public SocketException(String msg) {
         super(msg);
     }
 
     /**
-     * Constructs a new {@code SocketException} with no detail message.
+     * 构造一个不带详细信息的{@link SocketException}
      */
     public SocketException() {
     }
