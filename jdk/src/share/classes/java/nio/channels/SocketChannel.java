@@ -26,6 +26,7 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.Object;
 import java.net.Socket;
 import java.net.SocketOption;
 import java.net.SocketAddress;
@@ -34,79 +35,67 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 /**
- * A selectable channel for stream-oriented connecting sockets.
+ * 用于面向stream(TCP)链接socket的可选择的channel。
  *
- * <p> A socket channel is created by invoking one of the {@link #open open}
- * methods of this class.  It is not possible to create a channel for an arbitrary,
- * pre-existing socket. A newly-created socket channel is open but not yet
- * connected.  An attempt to invoke an I/O operation upon an unconnected
- * channel will cause a {@link NotYetConnectedException} to be thrown.  A
- * socket channel can be connected by invoking its {@link #connect connect}
- * method; once connected, a socket channel remains connected until it is
- * closed.  Whether or not a socket channel is connected may be determined by
- * invoking its {@link #isConnected isConnected} method.
+ * <p>调用该类中的{@code #open}来创建一个新的socket channel。
+ * 需要注意无法创建任意的，预先存在的socket。新常见的socket channel
+ * 处于{@code open}，但尚未连接的状态。如果此时在该socket channel
+ * 执行I/O操作，其会抛出{@link NotYetConnectedException}异常。
+ * 调用{@link #connect(SocketAddress)}可以使socket channel
+ * 状态变为{@code connected}。一旦建立连接，socket channel将
+ * 保持该状态，直到其被关闭。通过{@link #isConnected()}方法可以
+ * 检查socket channel是否已连接。
  *
- * <p> Socket channels support <i>non-blocking connection:</i>&nbsp;A socket
- * channel may be created and the process of establishing the link to the
- * remote socket may be initiated via the {@link #connect connect} method for
- * later completion by the {@link #finishConnect finishConnect} method.
- * Whether or not a connection operation is in progress may be determined by
- * invoking the {@link #isConnectionPending isConnectionPending} method.
+ * <p>socket channel支持非阻塞连接，当一个socket channel建立完成后，
+ * 通过{@link #connect(SocketAddress)}方法启动建立到远程socket channel
+ * 的过程，以便稍后通过{@link #finishConnect()}方法完成。通过{@link
+ * #isConnectionPending()}方法可以检查是否正在建立连接。
  *
- * <p> Socket channels support <i>asynchronous shutdown,</i> which is similar
- * to the asynchronous close operation specified in the {@link Channel} class.
- * If the input side of a socket is shut down by one thread while another
- * thread is blocked in a read operation on the socket's channel, then the read
- * operation in the blocked thread will complete without reading any bytes and
- * will return <tt>-1</tt>.  If the output side of a socket is shut down by one
- * thread while another thread is blocked in a write operation on the socket's
- * channel, then the blocked thread will receive an {@link
- * AsynchronousCloseException}.
+ * <p>socket channel支持异步关闭，类似于{@code Channel#close}类中的异步关闭。
+ * 如果输入端的socket channel被一个线程停止，同时另一个线程阻塞在socket channel
+ * 的读操作上，此时处于阻塞状态的读操作线程将立即完成，但不会读到任何字节，而是返回-1.
+ * 如果输出端的socket channel被一个线程停止，同时另外一个线程阻塞在socket channel
+ * 的写操作上，此时处于阻塞状态的写操作线程将会收到{@code AsynchronousCloseException}.
  *
- * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
- * setOption} method. Socket channels support the following options:
- * <blockquote>
- * <table border summary="Socket options">
+ * <p>通过{@link #setOption(SocketOption, java.lang.Object)}可以配置socket选项。
+ * socket channel支持以下选项：
+ * <table border summary="Socket 选项">
  *   <tr>
- *     <th>Option Name</th>
- *     <th>Description</th>
+ *       <th>选项名</th>
+ *       <th>描述</th>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </td>
- *     <td> The size of the socket send buffer </td>
+ *       <td>{@link StandardSocketOptions#SO_SNDBUF}</td>
+ *       <td>socket发送缓冲区大小</td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </td>
- *     <td> The size of the socket receive buffer </td>
+ *       <td>{@link StandardSocketOptions#SO_RCVBUF}</td>
+ *       <td>socket接受缓冲区大小</td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} </td>
- *     <td> Keep connection alive </td>
+ *       <td>{@link StandardSocketOptions#SO_KEEPALIVE}</td>
+ *       <td>保持连接活跃时长</td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </td>
- *     <td> Re-use address </td>
+ *       <td>{@link StandardSocketOptions#SO_REUSEADDR}</td>
+ *       <td>复用地址</td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_LINGER SO_LINGER} </td>
- *     <td> Linger on close if data is present (when configured in blocking mode
- *          only) </td>
+ *       <td>{@link StandardSocketOptions#SO_LINGER}</td>
+ *       <td>如果存在数据，则在关闭时停留（阻塞模式下）</td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY} </td>
- *     <td> Disable the Nagle algorithm </td>
+ *       <td>{@link StandardSocketOptions#TCP_NODELAY}</td>
+ *       <td>禁用Nagle算法</td>
  *   </tr>
  * </table>
- * </blockquote>
- * Additional (implementation specific) options may also be supported.
  *
- * <p> Socket channels are safe for use by multiple concurrent threads.  They
- * support concurrent reading and writing, though at most one thread may be
- * reading and at most one thread may be writing at any given time.  The {@link
- * #connect connect} and {@link #finishConnect finishConnect} methods are
- * mutually synchronized against each other, and an attempt to initiate a read
- * or write operation while an invocation of one of these methods is in
- * progress will block until that invocation is complete.  </p>
+ * 额外选项（实现特定）也可能支持。
+ *
+ * <p>socket channel是线程安全的。它支持并发读写，仅在同一时间支持最多
+ * 一个线程写，最多一个线程读。{@link #connect(SocketAddress)}和
+ * {@link #finishConnect()}方法相互同步。当这两个方法的任意一个在处理，
+ * 尝试在该socket channel上的读/写操作都会被阻塞，直到方法完成。
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group

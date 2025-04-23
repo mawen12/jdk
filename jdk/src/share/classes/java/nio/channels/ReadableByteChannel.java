@@ -30,8 +30,9 @@ import java.nio.ByteBuffer;
 
 
 /**
- * A channel that can read bytes.
+ * 可以读取字节的channel。
  *
+ * <p>
  * <p> Only one read operation upon a readable channel may be in progress at
  * any given time.  If one thread initiates a read operation upon a channel
  * then any other thread that attempts to initiate another read operation will

@@ -35,16 +35,11 @@ import java.io.IOException;
 /**
  * 代表网络socket的channel。
  *
- * <p>实现了该接口的channel代表是网络socket的channel。
- * {@link #bind(SocketAddress)}方法被用于绑定socket到本地{@link java.net.SocketAddress}，
- * {@link #getLocalAddress()}将返回socket绑定的地址。
- * {@link #setOption(SocketOption, java.lang.Object)}用于设置socket选项。
- * {@link #getOption(SocketOption)}用于获取socket选项。
- * 该接口的实现应该指定其支持的socket选项。
- *
- * <p>{@link #bind(SocketAddress)}和{@link #setOption(SocketOption, java.lang.Object)}
- * 方法没有返回值，但是被指定返回调用它们的channel。这允许链式方法调用，此接口的实现
- * 应该专门化返回类型，以便可以链接实现类上的方法调用。
+ * <p>{@link #bind(SocketAddress)}和{@link
+ * #setOption(SocketOption, java.lang.Object)}
+ * 方法没有返回值，但是被指定返回调用它们的channel。
+ * 这允许链式方法调用，此接口的实现应该专门化返回类型，
+ * 以便可以链接实现类上的方法调用。
  *
  * @since 1.7
  */
